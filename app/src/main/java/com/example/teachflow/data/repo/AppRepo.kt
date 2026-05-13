@@ -45,6 +45,8 @@ class AppRepo(private val firebase: Firebase) {
     suspend fun createCourse(course: Course) = firebase.createCourse(course)
     suspend fun getCourseById(courseId: String) = firebase.getCourseById(courseId)
     suspend fun getAllCourses() = firebase.getAllCourses()
+    suspend fun updateCourse(course: Course) = firebase.updateCourse(course)
+    suspend fun deleteCourse(id: String) = firebase.deleteCourse(id)
 
     // ============ LESSON ============
     suspend fun createLesson(lesson: Lesson) = firebase.createLesson(lesson)

@@ -210,6 +210,14 @@ class Firebase {
         }
     }
 
+    suspend fun updateCourse(course: Course) {
+        db.collection("courses").document(course.id).set(course).await()
+    }
+
+    suspend fun deleteCourse(id: String) {
+        db.collection("courses").document(id).delete().await()
+    }
+
     // ============ LESSON ============
     suspend fun createLesson(lesson: Lesson): String {
         db.collection("lessons").document(lesson.id).set(lesson).await()
