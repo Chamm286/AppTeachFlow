@@ -45,6 +45,14 @@ class Firebase {
         }
     }
 
+    suspend fun updateUser(user: User) {
+        db.collection("users").document(user.uid).set(user).await()
+    }
+
+    suspend fun deleteUser(uid: String) {
+        db.collection("users").document(uid).delete().await()
+    }
+
     // ============ TEACHER ============
     suspend fun createTeacher(teacher: Teacher): String {
         db.collection("teachers").document(teacher.id).set(teacher).await()

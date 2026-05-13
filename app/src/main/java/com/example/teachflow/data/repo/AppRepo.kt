@@ -14,6 +14,8 @@ class AppRepo(private val firebase: Firebase) {
     suspend fun getUserById(uid: String) = firebase.getUserById(uid)
     suspend fun getUserByEmail(email: String) = firebase.getUserByEmail(email)
     suspend fun getAllUsers() = firebase.getAllUsers()
+    suspend fun updateUser(user: User) = firebase.updateUser(user)
+    suspend fun deleteUser(uid: String) = firebase.deleteUser(uid)
 
     // ============ TEACHER ============
     suspend fun createTeacher(teacher: Teacher) = firebase.createTeacher(teacher)
