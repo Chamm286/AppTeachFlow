@@ -3,9 +3,11 @@
 import com.example.teachflow.data.model.*
 import com.example.teachflow.data.remote.Firebase
 
-class AppRepo {
-
-    private val firebase = Firebase()
+/**
+ * Repository class that acts as a single source of truth for data.
+ * It abstracts the data source (Firebase) from the rest of the app.
+ */
+class AppRepo(private val firebase: Firebase) {
 
     // ============ USER ============
     suspend fun createUser(user: User) = firebase.createUser(user)

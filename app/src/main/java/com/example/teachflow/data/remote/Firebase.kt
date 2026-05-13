@@ -11,7 +11,7 @@ class Firebase {
 
     // ============ USER ============
     suspend fun createUser(user: User): String {
-        val docRef = db.collection("users").document(user.uid).set(user).await()
+        db.collection("users").document(user.uid).set(user).await()
         return user.uid
     }
 
@@ -47,7 +47,7 @@ class Firebase {
 
     // ============ TEACHER ============
     suspend fun createTeacher(teacher: Teacher): String {
-        val docRef = db.collection("teachers").document(teacher.id).set(teacher).await()
+        db.collection("teachers").document(teacher.id).set(teacher).await()
         return teacher.id
     }
 
@@ -87,7 +87,7 @@ class Firebase {
 
     // ============ STUDENT ============
     suspend fun createStudent(student: Student): String {
-        val docRef = db.collection("students").document(student.id).set(student).await()
+        db.collection("students").document(student.id).set(student).await()
         return student.id
     }
 
@@ -114,7 +114,7 @@ class Firebase {
 
     // ============ CLASS ============
     suspend fun createClass(classItem: Class): String {
-        val docRef = db.collection("classes").document(classItem.id).set(classItem).await()
+        db.collection("classes").document(classItem.id).set(classItem).await()
         return classItem.id
     }
 
@@ -141,7 +141,7 @@ class Firebase {
 
     // ============ SUBJECT ============
     suspend fun createSubject(subject: Subject): String {
-        val docRef = db.collection("subjects").document(subject.id).set(subject).await()
+        db.collection("subjects").document(subject.id).set(subject).await()
         return subject.id
     }
 
@@ -159,7 +159,7 @@ class Firebase {
 
     // ============ SCHOOL ============
     suspend fun createSchool(school: School): String {
-        val docRef = db.collection("schools").document(school.id).set(school).await()
+        db.collection("schools").document(school.id).set(school).await()
         return school.id
     }
 
@@ -177,7 +177,7 @@ class Firebase {
 
     // ============ COURSE ============
     suspend fun createCourse(course: Course): String {
-        val docRef = db.collection("courses").document(course.id).set(course).await()
+        db.collection("courses").document(course.id).set(course).await()
         return course.id
     }
 
@@ -204,7 +204,7 @@ class Firebase {
 
     // ============ LESSON ============
     suspend fun createLesson(lesson: Lesson): String {
-        val docRef = db.collection("lessons").document(lesson.id).set(lesson).await()
+        db.collection("lessons").document(lesson.id).set(lesson).await()
         return lesson.id
     }
 
@@ -224,7 +224,7 @@ class Firebase {
 
     // ============ ASSIGNMENT ============
     suspend fun createAssignment(assignment: Assignment): String {
-        val docRef = db.collection("assignments").document(assignment.id).set(assignment).await()
+        db.collection("assignments").document(assignment.id).set(assignment).await()
         return assignment.id
     }
 
@@ -243,13 +243,13 @@ class Firebase {
 
     // ============ EXAM ============
     suspend fun createExam(exam: Exam): String {
-        val docRef = db.collection("exams").document(exam.id).set(exam).await()
+        db.collection("exams").document(exam.id).set(exam).await()
         return exam.id
     }
 
     // ============ GRADE ============
     suspend fun createGrade(grade: Grade): String {
-        val docRef = db.collection("grades").document(grade.id).set(grade).await()
+        db.collection("grades").document(grade.id).set(grade).await()
         return grade.id
     }
 
@@ -284,7 +284,7 @@ class Firebase {
 
     // ============ ATTENDANCE ============
     suspend fun createAttendance(attendance: Attendance): String {
-        val docRef = db.collection("attendances").document(attendance.id).set(attendance).await()
+        db.collection("attendances").document(attendance.id).set(attendance).await()
         return attendance.id
     }
 
@@ -319,7 +319,7 @@ class Firebase {
 
     // ============ NOTIFICATION ============
     suspend fun createNotification(notification: Notification): String {
-        val docRef = db.collection("notifications").document(notification.id).set(notification).await()
+        db.collection("notifications").document(notification.id).set(notification).await()
         return notification.id
     }
 
@@ -494,13 +494,7 @@ class Firebase {
                     student = student,
                     scores = grades,
                     averageScore = avgScore.toFloat(),
-                    rank = when {
-                        avgScore >= 9.0 -> "Xuất sắc"
-                        avgScore >= 8.0 -> "Giỏi"
-                        avgScore >= 6.5 -> "Khá"
-                        avgScore >= 5.0 -> "Trung bình"
-                        else -> "Yếu"
-                    }
+                    rank = calculateRank(avgScore)
                 )
             } else {
                 null
@@ -536,7 +530,7 @@ class Firebase {
     }
 
     suspend fun createTask(task: Task): String {
-        val docRef = db.collection("tasks").document(task.id).set(task).await()
+        db.collection("tasks").document(task.id).set(task).await()
         return task.id
     }
 
