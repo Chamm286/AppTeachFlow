@@ -1,4 +1,4 @@
-﻿package com.example.teachflow.data.repo
+package com.example.teachflow.data.repo
 
 import com.example.teachflow.data.model.*
 import com.example.teachflow.data.remote.Firebase
@@ -56,6 +56,7 @@ class AppRepo {
     // ============ GRADE ============
     suspend fun createGrade(grade: Grade) = firebase.createGrade(grade)
     suspend fun getGradesByStudent(studentId: String) = firebase.getGradesByStudent(studentId)
+    suspend fun getGradesByClass(classId: String) = firebase.getGradesByClass(classId)
     suspend fun getRecentGradesByStudent(studentId: String, limit: Int = 5) = firebase.getRecentGradesByStudent(studentId, limit)
 
     // ============ ATTENDANCE ============
@@ -66,6 +67,7 @@ class AppRepo {
     // ============ NOTIFICATION ============
     suspend fun createNotification(notification: Notification) = firebase.createNotification(notification)
     suspend fun getNotificationsByUser(userId: String) = firebase.getNotificationsByUser(userId)
+    suspend fun getNotificationsByRole(role: String) = firebase.getNotificationsByRole(role)
     suspend fun getNotificationsForParent(parentId: String) = firebase.getNotificationsForParent(parentId)
 
     // ============ PARENT ============

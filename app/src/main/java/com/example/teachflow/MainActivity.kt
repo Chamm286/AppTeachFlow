@@ -1,4 +1,4 @@
-﻿// MainActivity.kt
+// MainActivity.kt
 package com.example.teachflow
 
 import android.os.Bundle
@@ -29,12 +29,11 @@ class MainActivity : ComponentActivity() {
         RepoHolder.init(repo)
 
         // CHẠY SEED DATA - Bỏ comment nếu muốn seed dữ liệu lần đầu
-        // Seed data đã chạy xong, comment lại để không chạy nữa
-        // runBlocking {
-        //     Log.d("SEED", "🚀 Bắt đầu seed data...")
-        //     SeedData.seedAllData()
-        //     Log.d("SEED", "✅ Seed data hoàn tất!")
-        // }
+        runBlocking {
+            Log.d("SEED", "🚀 Bắt đầu seed data...")
+            SeedData.seedAllData()
+            Log.d("SEED", "✅ Seed data hoàn tất!")
+        }
 
         setContent {
             MaterialTheme {

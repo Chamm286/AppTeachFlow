@@ -1,4 +1,4 @@
-﻿package com.example.teachflow.data.remote
+package com.example.teachflow.data.remote
 
 import com.example.teachflow.data.model.*
 import com.google.firebase.firestore.FirebaseFirestore
@@ -267,6 +267,19 @@ class Firebase {
         }
     }
 
+    suspend fun getGradesByClass(classId: String): List<Grade> {
+        return try {
+            db.collection("grades")
+                .whereEqualTo("classId", classId)
+                .get()
+                .await()
+                .documents
+                .mapNotNull { it.toObject(Grade::class.java) }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
     suspend fun getRecentGradesByStudent(studentId: String, limit: Int = 5): List<Grade> {
         return try {
             db.collection("grades")
@@ -326,7 +339,31 @@ class Firebase {
     suspend fun getNotificationsByUser(userId: String): List<Notification> {
         return try {
             db.collection("notifications")
-                .whereEqualTo("userId", userId)
+                .whereEqualTo("targetUserId", userId) // Sửa lại field cho đúng logic thường gặp
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .get()
+                .await()
+                .documents
+                .mapNotNull { it.toObject(Notification::class.java) }
+        } catch (e: Exception) {
+            // Nếu không có field targetUserId thì thử senderId hoặc search theo role
+            try {
+                db.collection("notifications")
+                    .whereArrayContains("targetRoles", "teacher")
+                    .get()
+                    .await()
+                    .documents
+                    .mapNotNull { it.toObject(Notification::class.java) }
+            } catch (e2: Exception) {
+                emptyList()
+            }
+        }
+    }
+
+    suspend fun getNotificationsByRole(role: String): List<Notification> {
+        return try {
+            db.collection("notifications")
+                .whereArrayContains("targetRoles", role)
                 .orderBy("createdAt", Query.Direction.DESCENDING)
                 .get()
                 .await()

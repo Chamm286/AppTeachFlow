@@ -1,12 +1,15 @@
-﻿// presentation/teacher/TeacherDashboardScreen.kt
+// presentation/teacher/TeacherDashboardScreen.kt
 package com.example.teachflow.presentation.teacher
 
 import android.util.Log
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyRow as ComposeLazyRow // Tránh trùng lặp nếu cần
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -27,18 +30,24 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.teachflow.core.RepoHolder
 import com.example.teachflow.data.model.Class
+import com.example.teachflow.data.model.Notification
+import com.example.teachflow.data.model.Student
+import com.example.teachflow.data.model.Grade
 import kotlinx.coroutines.launch
 
 // Màu sắc
 val NavyBlue = Color(0xFF0F4C81)
-val NavyDark = Color(0xFF0A3A62)
-val SuccessGreen = Color(0xFF34A853)
-val WarningOrange = Color(0xFFFBBC05)
-val ErrorRed = Color(0xFFEA4335)
-val BgGray = Color(0xFFF5F7FA)
+val NavyLight = Color(0xFF2369A3)
+val NavyDark = Color(0xFF06335B)
+val GlassWhite = Color(0xCCFFFFFF)
+val SuccessGreen = Color(0xFF2D9D78)
+val WarningOrange = Color(0xFFE6A23C)
+val ErrorRed = Color(0xFFD64545)
+val BgGray = Color(0xFFF0F2F5)
 val CardWhite = Color(0xFFFFFFFF)
-val TextDark = Color(0xFF1A1A2E)
-val TextGray = Color(0xFF6B7280)
+val TextDark = Color(0xFF1E293B)
+val TextGray = Color(0xFF64748B)
+val AccentGold = Color(0xFFFFD700)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,20 +62,50 @@ fun TeacherDashboardScreen(
 
     // State cho dữ liệu
     var classes by remember { mutableStateOf<List<Class>>(emptyList()) }
+    var notifications by remember { mutableStateOf<List<Notification>>(emptyList()) }
+    var selectedClassForGrades by remember { mutableStateOf<Class?>(null) }
+    var studentsInSelectedClass by remember { mutableStateOf<List<Student>>(emptyList()) }
+    var gradesInSelectedClass by remember { mutableStateOf<List<Grade>>(emptyList()) }
+    
     var isLoading by remember { mutableStateOf(true)}
+    var isGradesLoading by remember { mutableStateOf(false) }
 
-    // Load dữ liệu
+    // Load dữ liệu ban đầu
     LaunchedEffect(teacherId) {
         isLoading = true
         try {
-            Log.d("TEACHER_DASH", "📚 Đang tải lớp học cho giáo viên: $teacherId")
+            Log.d("TEACHER_DASH", "📚 Đang tải dữ liệu cho giáo viên: $teacherId")
+            
+            // Tải lớp học
             val classList = RepoHolder.repo.getClassesByTeacher(teacherId)
             classes = classList
-            Log.d("TEACHER_DASH", "✅ Đã tải ${classes.size} lớp học")
+            
+            // Tải thông báo
+            val notiList = RepoHolder.repo.getNotificationsByRole("teacher")
+            notifications = notiList
+            
+            Log.d("TEACHER_DASH", "✅ Đã tải ${classes.size} lớp và ${notifications.size} thông báo")
         } catch (e: Exception) {
-            Log.e("TEACHER_DASH", "❌ Lỗi: ${e.message}")
+            Log.e("TEACHER_DASH", "❌ Lỗi tải dữ liệu: ${e.message}")
         }
         isLoading = false
+    }
+
+    // Load học sinh và điểm khi chọn lớp trong tab Bảng điểm
+    LaunchedEffect(selectedClassForGrades) {
+        if (selectedClassForGrades != null) {
+            isGradesLoading = true
+            try {
+                val studentList = RepoHolder.repo.getStudentsByClass(selectedClassForGrades!!.id)
+                studentsInSelectedClass = studentList
+                
+                val gradeList = RepoHolder.repo.getGradesByClass(selectedClassForGrades!!.id)
+                gradesInSelectedClass = gradeList
+            } catch (e: Exception) {
+                Log.e("TEACHER_DASH", "❌ Lỗi tải điểm: ${e.message}")
+            }
+            isGradesLoading = false
+        }
     }
 
     ModalNavigationDrawer(
@@ -182,8 +221,8 @@ fun TeacherDashboardScreen(
                         .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)),
                     containerColor = CardWhite
                 ) {
-                    val items = listOf("Trang chủ", "Lớp học", "Bảng điểm", "Cá nhân")
-                    items.forEachIndexed { index, title ->
+                    val bottomNavItems = listOf("Trang chủ", "Lớp học", "Bảng điểm", "Cá nhân")
+                    bottomNavItems.forEachIndexed { index, title ->
                         NavigationBarItem(
                             selected = selectedTab == index,
                             onClick = { selectedTab = index },
@@ -211,11 +250,30 @@ fun TeacherDashboardScreen(
                 }
             }
         ) { padding ->
-            when (selectedTab) {
-                0 -> HomeTabContent(padding, teacherName, classes, isLoading)
-                1 -> ClassesTabContent(padding, classes, isLoading)
-                2 -> GradesTabContent(padding)
-                3 -> ProfileTabContent(padding, teacherName, teacherId)
+            Box(modifier = Modifier.fillMaxSize().background(BgGray)) {
+                // Background Decorative Elements
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    drawCircle(
+                        color = NavyBlue.copy(alpha = 0.05f),
+                        radius = 400f,
+                        center = Offset(this.size.width * 0.9f, this.size.height * 0.1f)
+                    )
+                }
+
+                when (selectedTab) {
+                    0 -> HomeTabContent(padding, teacherName, classes, notifications, isLoading)
+                    1 -> ClassesTabContent(padding, classes, isLoading, navController)
+                    2 -> GradesTabContent(
+                        padding = padding,
+                        classes = classes,
+                        selectedClass = selectedClassForGrades,
+                        onClassSelect = { selectedClassForGrades = it },
+                        students = studentsInSelectedClass,
+                        grades = gradesInSelectedClass,
+                        isLoading = isGradesLoading
+                    )
+                    3 -> ProfileTabContent(padding, teacherName, teacherId, navController)
+                }
             }
         }
     }
@@ -255,7 +313,230 @@ fun DrawerMenuItem(
 }
 
 @Composable
-fun HomeTabContent(padding: PaddingValues, teacherName: String, classes: List<Class>, isLoading: Boolean) {
+fun HomeTabContent(
+    padding: PaddingValues, 
+    teacherName: String, 
+    classes: List<Class>, 
+    notifications: List<Notification>,
+    isLoading: Boolean
+) {
+    if (isLoading) {
+        Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = NavyBlue)
+        }
+    } else {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(padding).background(BgGray),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Welcome Header
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(
+                            brush = Brush.linearGradient(
+                                colors = listOf(NavyBlue, NavyLight),
+                                start = Offset(0f, 0f),
+                                end = Offset(1000f, 1000f)
+                            )
+                        )
+                ) {
+                    // Decorative patterns
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        drawCircle(Color.White.copy(alpha = 0.1f), radius = 200f, center = Offset(this.size.width * 0.8f, 0f))
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxSize().padding(24.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color.White.copy(alpha = 0.2f),
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            ) {
+                                Text(
+                                    "✨ Chúc bạn một ngày làm việc tốt lành",
+                                    fontSize = 11.sp,
+                                    color = Color.White,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                )
+                            }
+                            Text("Chào bạn,", fontSize = 16.sp, color = Color.White.copy(alpha = 0.9f))
+                            Text(teacherName, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                        }
+                        Surface(
+                            modifier = Modifier.size(80.dp),
+                            shape = CircleShape,
+                            color = Color.White.copy(alpha = 0.15f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.3f))
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text("🧑‍🏫", fontSize = 40.sp)
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Stats Row
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    StatCardPremium("Lớp học", classes.size.toString(), Icons.Default.School, NavyBlue, Modifier.weight(1f))
+                    StatCardPremium("Học sinh", classes.sumOf { it.studentCount }.toString(), Icons.Default.Groups, SuccessGreen, Modifier.weight(1f))
+                }
+            }
+
+            // Notifications Section
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("🔔 Thông báo mới", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                    Text("Xem tất cả", fontSize = 12.sp, color = NavyBlue, modifier = Modifier.clickable { })
+                }
+            }
+
+            if (notifications.isEmpty()) {
+                item {
+                    EmptyStateCard("Không có thông báo nào mới")
+                }
+            } else {
+                items(notifications.take(3)) { notification ->
+                    NotificationItem(notification)
+                }
+            }
+
+            // Recent Classes
+            item {
+                Text("📅 Lịch dạy gần đây", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark)
+            }
+
+            if (classes.isEmpty()) {
+                item { EmptyStateCard("Bạn chưa được phân công lớp nào") }
+            } else {
+                items(classes.take(2)) { classItem ->
+                    ClassCompactItem(classItem)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun StatCardPremium(label: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector, color: Color, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier.shadow(12.dp, RoundedCornerShape(24.dp), ambientColor = color.copy(alpha = 0.5f)),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = CardWhite)
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Box(
+                modifier = Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(color.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(24.dp))
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(value, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = TextDark)
+            Text(label, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = TextGray)
+        }
+    }
+}
+
+@Composable
+fun NotificationItem(notification: Notification) {
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = CardWhite),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier.size(48.dp).clip(CircleShape).background(
+                    brush = Brush.radialGradient(
+                        colors = when(notification.type) {
+                            "exam" -> listOf(ErrorRed.copy(alpha = 0.2f), ErrorRed.copy(alpha = 0.05f))
+                            "event" -> listOf(WarningOrange.copy(alpha = 0.2f), WarningOrange.copy(alpha = 0.05f))
+                            else -> listOf(NavyBlue.copy(alpha = 0.2f), NavyBlue.copy(alpha = 0.05f))
+                        }
+                    )
+                ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(when(notification.type) {
+                    "exam" -> "📝"
+                    "event" -> "📅"
+                    else -> "📢"
+                }, fontSize = 24.sp)
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(notification.title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                Text(notification.content, fontSize = 13.sp, color = TextGray, maxLines = 1)
+            }
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = TextGray.copy(alpha = 0.5f))
+        }
+    }
+}
+
+@Composable
+fun ClassCompactItem(classItem: Class) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = CardWhite),
+        elevation = CardDefaults.cardElevation(1.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier.size(44.dp).clip(RoundedCornerShape(10.dp)).background(NavyBlue.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(classItem.name.take(1), fontWeight = FontWeight.Bold, color = NavyBlue)
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(classItem.name, fontWeight = FontWeight.SemiBold, color = TextDark)
+                Text(classItem.schedule ?: "Chưa có lịch", fontSize = 12.sp, color = TextGray)
+            }
+            Text(classItem.room ?: "", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = NavyBlue)
+        }
+    }
+}
+
+@Composable
+fun EmptyStateCard(message: String) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = CardWhite.copy(alpha = 0.5f))
+    ) {
+        Box(modifier = Modifier.padding(24.dp), contentAlignment = Alignment.Center) {
+            Text(message, fontSize = 14.sp, color = TextGray)
+        }
+    }
+}
+
+@Composable
+fun ClassesTabContent(padding: PaddingValues, classes: List<Class>, isLoading: Boolean, navController: NavController) {
     if (isLoading) {
         Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(color = NavyBlue)
@@ -267,72 +548,198 @@ fun HomeTabContent(padding: PaddingValues, teacherName: String, classes: List<Cl
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = NavyBlue)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(20.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text("Chào mừng,", fontSize = 14.sp, color = Color.White.copy(alpha = 0.8f))
-                            Text(teacherName, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                            Text("Chúc một ngày tốt lành!", fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f))
-                        }
-                        Text("👩‍🏫", fontSize = 48.sp)
-                    }
+                Column(modifier = Modifier.padding(bottom = 8.dp)) {
+                    Text("Lớp học phụ trách", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = TextDark)
+                    Text("Quản lý danh sách và tình hình học tập", fontSize = 14.sp, color = TextGray)
                 }
             }
 
-            item {
-                Text("📚 Lớp học của bạn", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = TextDark)
+            items(classes) { classItem ->
+                Card(
+                    modifier = Modifier.fillMaxWidth().shadow(8.dp, RoundedCornerShape(24.dp)),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = CardWhite)
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier.size(56.dp).clip(RoundedCornerShape(16.dp)).background(NavyBlue.copy(alpha = 0.1f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("📚", fontSize = 28.sp)
+                            }
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(classItem.name, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                                Text(classItem.subject ?: "Môn học chuyên ngành", fontSize = 13.sp, color = NavyBlue, fontWeight = FontWeight.Medium)
+                            }
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = SuccessGreen.copy(alpha = 0.1f)
+                            ) {
+                                Text(
+                                    "Đang dạy",
+                                    color = SuccessGreen,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+                        
+                        Divider(modifier = Modifier.padding(vertical = 16.dp), color = BgGray)
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            ClassInfoItem(Icons.Default.People, "${classItem.studentCount} HS", "Học sinh")
+                            ClassInfoItem(Icons.Default.MeetingRoom, classItem.room ?: "P.Học", "Phòng học")
+                            ClassInfoItem(Icons.Default.Schedule, "Tiết 1-3", "Thời gian")
+                        }
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        Button(
+                            onClick = { /* Detail */ },
+                            modifier = Modifier.fillMaxWidth().height(48.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
+                        ) {
+                            Text("Xem chi tiết lớp học", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
             }
+        }
+    }
+}
 
-            if (classes.isEmpty()) {
+@Composable
+fun ClassInfoItem(icon: androidx.compose.ui.graphics.vector.ImageVector, value: String, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Icon(icon, contentDescription = null, tint = NavyBlue, modifier = Modifier.size(18.dp))
+        Text(value, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextDark)
+        Text(label, fontSize = 10.sp, color = TextGray)
+    }
+}
+
+@Composable
+fun GradesTabContent(
+    padding: PaddingValues,
+    classes: List<Class>,
+    selectedClass: Class?,
+    onClassSelect: (Class) -> Unit,
+    students: List<Student>,
+    grades: List<Grade>,
+    isLoading: Boolean
+) {
+    Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+        // Class Selector
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("Quản lý bảng điểm", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = TextDark)
+            Spacer(modifier = Modifier.height(12.dp))
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                items(classes) { classItem ->
+                    val isSelected = selectedClass?.id == classItem.id
+                    Surface(
+                        modifier = Modifier.clickable { onClassSelect(classItem) }.shadow(if (isSelected) 8.dp else 0.dp, RoundedCornerShape(16.dp)),
+                        shape = RoundedCornerShape(16.dp),
+                        color = if (isSelected) NavyBlue else CardWhite,
+                        border = if (isSelected) null else androidx.compose.foundation.BorderStroke(1.dp, NavyBlue.copy(alpha = 0.1f))
+                    ) {
+                        Text(
+                            text = classItem.name,
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+                            color = if (isSelected) Color.White else NavyBlue,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
+
+        if (selectedClass == null) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("📊", fontSize = 80.sp)
+                    Text("Vui lòng chọn một lớp học", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                    Text("Để bắt đầu quản lý điểm số", fontSize = 13.sp, color = TextGray)
+                }
+            }
+        } else if (isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = NavyBlue)
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 item {
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                         shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = CardWhite)
+                        colors = CardDefaults.cardColors(containerColor = NavyBlue.copy(alpha = 0.05f))
                     ) {
-                        Column(
-                            modifier = Modifier.fillMaxWidth().padding(32.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text("📭", fontSize = 48.sp)
-                            Text("Chưa có lớp học nào", fontSize = 14.sp, color = TextGray)
+                        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text("Học sinh trong lớp", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold, color = NavyBlue)
+                            Text("Điểm trung bình", fontWeight = FontWeight.Bold, color = NavyBlue)
                         }
                     }
                 }
-            } else {
-                items(classes.take(3)) { classItem ->
+                
+                items(students) { student ->
+                    val studentGrade = grades.find { it.studentId == student.id }
+                    val avg = studentGrade?.average ?: 0.0
+                    val scoreColor = when {
+                        avg >= 8.0 -> SuccessGreen
+                        avg >= 5.0 -> WarningOrange
+                        else -> ErrorRed
+                    }
+                    
                     Card(
-                        modifier = Modifier.fillMaxWidth().clickable { },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = CardWhite),
-                        elevation = CardDefaults.cardElevation(2.dp)
+                        modifier = Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(16.dp)),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = CardWhite)
                     ) {
                         Row(
                             modifier = Modifier.padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = NavyBlue.copy(alpha = 0.1f),
-                                modifier = Modifier.size(48.dp)
+                            Box(
+                                modifier = Modifier.size(44.dp).clip(CircleShape).background(scoreColor.copy(alpha = 0.1f)),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Box(contentAlignment = Alignment.Center) { Text("📖", fontSize = 24.sp) }
+                                Text(student.name.take(1), fontWeight = FontWeight.Bold, color = scoreColor)
                             }
-                            Spacer(modifier = Modifier.width(12.dp))
+                            Spacer(modifier = Modifier.width(16.dp))
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(classItem.name, fontWeight = FontWeight.SemiBold, color = TextDark)
-                                Text("👥 ${classItem.studentCount} học sinh", fontSize = 12.sp, color = TextGray)
-                                Text("🏠 ${classItem.room ?: "Chưa có phòng"}", fontSize = 11.sp, color = NavyBlue)
+                                Text(student.name, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                                Text("ID: ${student.id}", fontSize = 12.sp, color = TextGray)
                             }
-                            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = TextGray)
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text(
+                                    text = if (avg > 0) String.format("%.1f", avg) else "--",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = scoreColor
+                                )
+                                Text(
+                                    text = when {
+                                        avg >= 8.0 -> "Giỏi"
+                                        avg >= 6.5 -> "Khá"
+                                        avg >= 5.0 -> "Trung bình"
+                                        avg > 0 -> "Yếu"
+                                        else -> "Chưa nhập"
+                                    },
+                                    fontSize = 10.sp,
+                                    color = scoreColor,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
                 }
@@ -342,88 +749,71 @@ fun HomeTabContent(padding: PaddingValues, teacherName: String, classes: List<Cl
 }
 
 @Composable
-fun ClassesTabContent(padding: PaddingValues, classes: List<Class>, isLoading: Boolean) {
-    if (isLoading) {
-        Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = NavyBlue)
-        }
-    } else if (classes.isEmpty()) {
-        Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("📚", fontSize = 64.sp)
-                Text("Chưa có lớp học nào", fontSize = 16.sp, color = TextGray)
-            }
-        }
-    } else {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(classes) { classItem ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = CardWhite),
-                    elevation = CardDefaults.cardElevation(2.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = NavyBlue.copy(alpha = 0.1f),
-                            modifier = Modifier.size(56.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) { Text("📖", fontSize = 28.sp) }
-                        }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(classItem.name, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = TextDark)
-                            Text("👥 ${classItem.studentCount} học sinh", fontSize = 12.sp, color = TextGray)
-                            Text("🏠 ${classItem.room ?: "Chưa có"} - 👩‍🏫 ${classItem.teacherName}", fontSize = 11.sp, color = NavyBlue)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun GradesTabContent(padding: PaddingValues) {
-    Box(
-        modifier = Modifier.fillMaxSize().padding(padding),
-        contentAlignment = Alignment.Center
+fun ProfileTabContent(padding: PaddingValues, teacherName: String, teacherId: String, navController: NavController) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(padding).background(BgGray),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("📊", fontSize = 64.sp)
-            Text("Bảng điểm", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark)
-            Text("Đang phát triển...", fontSize = 14.sp, color = TextGray)
-        }
-    }
-}
-
-@Composable
-fun ProfileTabContent(padding: PaddingValues, teacherName: String, teacherId: String) {
-    Box(
-        modifier = Modifier.fillMaxSize().padding(padding),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Surface(
-                shape = CircleShape,
-                color = NavyBlue.copy(alpha = 0.1f),
-                modifier = Modifier.size(100.dp)
+        item {
+            Box(
+                modifier = Modifier.fillMaxWidth().height(160.dp).background(NavyBlue),
+                contentAlignment = Alignment.BottomCenter
             ) {
-                Box(contentAlignment = Alignment.Center) { Text("👩‍🏫", fontSize = 56.sp) }
+                Surface(
+                    modifier = Modifier.offset(y = 40.dp).size(100.dp).shadow(8.dp, CircleShape),
+                    shape = CircleShape,
+                    color = CardWhite
+                ) {
+                    Box(contentAlignment = Alignment.Center) { Text("👩‍🏫", fontSize = 50.sp) }
+                }
             }
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(50.dp))
             Text(teacherName, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = TextDark)
-            Text("Mã GV: $teacherId", fontSize = 14.sp, color = TextGray)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text("Chức vụ: Giáo viên", fontSize = 14.sp, color = TextGray)
+            Text("Giảng viên cao cấp", fontSize = 14.sp, color = TextGray)
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                ProfileInfoCard("Mã nhân viên", teacherId, Icons.Default.Badge)
+                ProfileInfoCard("Email", "teacher@school.edu.vn", Icons.Default.Email)
+                ProfileInfoCard("Khoa", "Công nghệ Thông tin", Icons.Default.Domain)
+                ProfileInfoCard("Kinh nghiệm", "8 năm giảng dạy", Icons.Default.Star)
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                Button(
+                    onClick = { 
+                        navController.navigate("login") {
+                            popUpTo("teacher_dashboard") { inclusive = true }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = ErrorRed),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Default.Logout, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Đăng xuất", fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ProfileInfoCard(label: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector) {
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = CardWhite)
+    ) {
+        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, contentDescription = null, tint = NavyBlue, modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.width(16.dp))
+            Column {
+                Text(label, fontSize = 12.sp, color = TextGray)
+                Text(value, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = TextDark)
+            }
         }
     }
 }
