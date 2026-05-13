@@ -1,0 +1,48 @@
+﻿========================================
+ HƯỚNG DẪN SEED DATA VÀO FIREBASE
+========================================
+
+1. Mở file: app/src/main/java/com/example/teachflow/MainActivity.kt
+
+2. Tìm dòng code:
+   // SeedData().runSeed()
+
+3. Bỏ comment thành:
+   SeedData().runSeed()
+
+4. Chạy app trên điện thoại hoặc máy ảo
+
+5. Quan sát logcat (tìm tag "SeedData" hoặc nhìn console)
+   Sẽ thấy thông báo:
+   ✅ SEED DỮ LIỆU HOÀN TẤT!
+   📊 THỐNG KÊ:
+      • Giáo viên: 5
+      • Học sinh: 7
+
+6. Sau khi seed thành công, comment lại dòng đó:
+   // SeedData().runSeed()
+
+7. Kiểm tra trên Firebase Console -> Firestore Database
+   Sẽ thấy collection "users" với 12 documents
+
+========================================
+ DỮ LIỆU SẼ ĐƯỢC TẠO:
+========================================
+
+GIÁO VIÊN (5):
+- GV001 - Nguyễn Văn An (Toán) - Lớp 12A1
+- GV002 - Trần Thị Bình (Văn) - Lớp 12A2
+- GV003 - Lê Văn Cường (Anh) - Lớp 12A3
+- GV004 - Phạm Thị Dung (Lý) - Lớp 12A4
+- GV005 - Hoàng Văn Em (Hóa) - Lớp 11A1
+
+HỌC SINH (7):
+- HS001 - Nguyễn Hoàng Anh (12A1 - Giỏi)
+- HS002 - Trần Minh Bảo (12A1 - Giỏi)
+- HS003 - Lê Thanh Huyền (12A2 - Giỏi)
+- HS004 - Nguyễn Thị Lan (12A2 - Giỏi)
+- HS005 - Phạm Đức Anh (12A3 - Giỏi)
+- HS006 - Vũ Thanh Tùng (12A3 - Giỏi)
+- HS007 - Đặng Thu Trang (12A4 - Khá)
+
+========================================

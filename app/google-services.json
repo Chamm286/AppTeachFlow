@@ -1,0 +1,47 @@
+﻿{
+  "project_info": {
+    "project_number": "907736584689",
+    "project_id": "teachflow-67fd1",
+    "storage_bucket": "teachflow-67fd1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:907736584689:android:c9dd4e15ac66b37e807450",
+        "android_client_info": {
+          "package_name": "com.example.teachflow"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "907736584689-ub25d7lkpae8djshab62nchrtp07i2bh.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.teachflow",
+            "certificate_hash": "a6d0ed56e182c114313d800de3c694948b1b015b"
+          }
+        },
+        {
+          "client_id": "907736584689-61bekmij8001spq4cbqs8cjsvuppp5m6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDC_gzb0zdTBCuYNkELf_hYD9uvvdPZubk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "907736584689-61bekmij8001spq4cbqs8cjsvuppp5m6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

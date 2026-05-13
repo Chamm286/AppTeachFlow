@@ -1,0 +1,27 @@
+﻿<resources>
+    <string name="app_name">TeachFlow</string>
+
+    <!-- Login Screen -->
+    <string name="login_title">Ã°Å¸â€œÅ¡ TeachFlow</string>
+    <string name="email_hint">Email</string>
+    <string name="password_hint">MÃ¡ÂºÂ­t khÃ¡ÂºÂ©u</string>
+    <string name="login_button">Ã„ÂÃ„Æ’ng nhÃ¡ÂºÂ­p</string>
+    <string name="login_error">Sai email hoÃ¡ÂºÂ·c mÃ¡ÂºÂ­t khÃ¡ÂºÂ©u</string>
+
+    <!-- Class List Screen -->
+    <string name="class_list_title">LÃ¡Â»â€ºp hÃ¡Â»Âc cÃ¡Â»Â§a tÃƒÂ´i</string>
+    <string name="empty_class_list">ChÃ†Â°a cÃƒÂ³ lÃ¡Â»â€ºp hÃ¡Â»Âc nÃƒÂ o</string>
+
+    <!-- Grade Input Screen -->
+    <string name="grade_input_title">NhÃ¡ÂºÂ­p Ã„â€˜iÃ¡Â»Æ’m - %s</string>
+    <string name="save_button">LÃ†Â°u</string>
+    <string name="student_header">HÃ¡Â»Âc sinh</string>
+    <string name="no_data">KhÃƒÂ´ng cÃƒÂ³ dÃ¡Â»Â¯ liÃ¡Â»â€¡u</string>
+
+    <!-- Common -->
+    <string name="academic_year">NÃ„Æ’m hÃ¡Â»Âc: %s</string>
+    <string name="room_schedule" formatted="false">PhÃƒÂ²ng: %s - %s</string>
+    <string name="default_web_client_id">907736584689-61bekmij8001spq4cbqs8cjsvuppp5m6.apps.googleusercontent.com</string>
+</resources>
+
+

@@ -1,0 +1,21 @@
+﻿# Built files
+build/
+app/build/
+.gradle/
+local.properties
+*.iml
+.idea/
+*.class
+*.apk
+*.aab
+.DS_Store
+Thumbs.db
+*.log
+captures/
+.externalNativeBuild/
+
+# Heap dump files
+*.hprof
+*.bak
+app/build/
+build/
