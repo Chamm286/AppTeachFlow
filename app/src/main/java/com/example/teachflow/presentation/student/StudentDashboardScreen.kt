@@ -14,15 +14,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.teachflow.presentation.theme.* // Đảm bảo import theme của anh
+import com.example.teachflow.presentation.student.viewmodel.StudentUiState
+import com.example.teachflow.presentation.theme.*
 
-// Hằng số màu (Nếu file theme của anh chưa có thì giữ lại)
+// Hằng số màu
 val TeachFlowWarning = Color(0xFFFBBC05)
 val TeachFlowError = Color(0xFFEA4335)
 val TeachFlowBlue = Color(0xFF1A73E8)
@@ -36,8 +38,12 @@ val CardWhite = Color(0xFFFFFFFF)
 fun StudentDashboardScreen(
     navController: NavController,
     studentId: String,
-    studentName: String
+    studentName: String,
+    viewModel: com.example.teachflow.presentation.student.viewmodel.StudentViewModel
 ) {
+    val state by viewModel.state.collectAsState()
+    var isExpanded by remember { mutableStateOf(false) }
+
     Box(modifier = Modifier.fillMaxSize().background(BgLightGray)) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -86,7 +92,6 @@ fun StudentDashboardScreen(
                 // Thêm spacer để bù lại khoảng offset (-30dp) của StatCard
                 Spacer(modifier = Modifier.height(8.dp))
                 SectionHeader("📅 Lịch học hôm nay", onSeeAllClick = {
-                    // TODO: Navigate to Schedule Screen
                     // navController.navigate("schedule_screen")
                 })
             }
@@ -100,6 +105,53 @@ fun StudentDashboardScreen(
 
             items(todaySchedule) { schedule ->
                 ScheduleCardEnhanced(schedule)
+            }
+
+            // ==========================================
+            // 4. Section: Khóa học của tôi (Nằm ngay dưới Lịch học)
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+                // Khi nhấn "Xem tất cả", mình đảo ngược trạng thái của biến isExpanded
+                SectionHeader(
+                    title = "📚 Khóa học của tôi",
+                    onSeeAllClick = { isExpanded = !isExpanded } // Nhấn để hiện thêm hoặc thu gọn
+                )
+            }
+
+            // Xử lý logic hiển thị: Nếu chưa nhấn "Xem tất cả" thì chỉ hiện 2 khóa đầu tiên
+            val displayCourses = if (isExpanded) {
+                state.classes // Hiện toàn bộ từ Firebase
+            } else {
+                state.classes.take(2) // Chỉ hiện 2 cái cho gọn dashboard
+            }
+
+            items(displayCourses) { course ->
+                val uiData = EnrolledCourseData(
+                    id = course.id,
+                    courseName = course.name,
+                    teacherName = course.teacherName,
+                    progress = 0.5f,
+                    icon = "📘",
+                    bgColor = Color(0xFFE0F2FE),
+                    accentColor = Color(0xFF0284C7)
+                )
+
+                EnrolledCourseCard(course = uiData, onClick = {
+                    // Tạm thời mình chỉ Log ra hoặc thông báo, không navigate để tránh văng app
+                    println("Click vào khóa học: ${course.name}")
+                })
+            }
+
+            // Thêm một nút bấm nhỏ ở cuối nếu danh sách quá dài (Tùy chọn)
+            if (state.classes.size > 2) {
+                item {
+                    TextButton(
+                        onClick = { isExpanded = !isExpanded },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(if (isExpanded) "Thu gọn bớt" else "Xem thêm ${state.classes.size - 2} khóa học")
+                    }
+                }
             }
         }
     }
@@ -325,5 +377,89 @@ fun AttendanceStatusTag(status: AttendanceStatus) {
             fontWeight = FontWeight.Bold,
             color = textColor
         )
+    }
+} // <--- ĐÃ SỬA: Đóng hàm AttendanceStatusTag tại đây
+
+// ==========================================
+// THÀNH PHẦN MỚI: KHÓA HỌC ĐÃ ĐĂNG KÝ
+// ==========================================
+
+data class EnrolledCourseData(
+    val id: String,
+    val courseName: String,
+    val teacherName: String,
+    val progress: Float, // Tiến độ từ 0.0f đến 1.0f
+    val icon: String,
+    val bgColor: Color,
+    val accentColor: Color
+)
+
+@Composable
+fun EnrolledCourseCard(course: EnrolledCourseData, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = CardWhite),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Icon khóa học (Có background màu nhạt)
+            Surface(
+                modifier = Modifier.size(52.dp),
+                shape = RoundedCornerShape(14.dp),
+                color = course.bgColor
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(course.icon, fontSize = 24.sp)
+                }
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // Thông tin và Thanh tiến độ
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = course.courseName,
+                    fontWeight = FontWeight.Bold,
+                    color = TeachFlowText,
+                    fontSize = 15.sp,
+                    maxLines = 1
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "Giảng viên: ${course.teacherName}",
+                    fontSize = 12.sp,
+                    color = TeachFlowTextSecondary
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Thanh Progress Bar
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    LinearProgressIndicator(
+                        progress = course.progress,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp)),
+                        color = course.accentColor,
+                        trackColor = course.accentColor.copy(alpha = 0.2f)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "${(course.progress * 100).toInt()}%",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = course.accentColor
+                    )
+                }
+            }
+        }
     }
 }
