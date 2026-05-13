@@ -9,14 +9,27 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.LazyRow as ComposeLazyRow // Tránh trùng lặp nếu cần
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,6 +46,7 @@ import com.example.teachflow.data.model.Class
 import com.example.teachflow.data.model.Notification
 import com.example.teachflow.data.model.Student
 import com.example.teachflow.data.model.Grade
+import com.example.teachflow.data.model.Teacher
 import kotlinx.coroutines.launch
 
 // Màu sắc
@@ -63,6 +77,7 @@ fun TeacherDashboardScreen(
     // State cho dữ liệu
     var classes by remember { mutableStateOf<List<Class>>(emptyList()) }
     var notifications by remember { mutableStateOf<List<Notification>>(emptyList()) }
+    var teacherData by remember { mutableStateOf<Teacher?>(null) }
     var selectedClassForGrades by remember { mutableStateOf<Class?>(null) }
     var studentsInSelectedClass by remember { mutableStateOf<List<Student>>(emptyList()) }
     var gradesInSelectedClass by remember { mutableStateOf<List<Grade>>(emptyList()) }
@@ -70,40 +85,56 @@ fun TeacherDashboardScreen(
     var isLoading by remember { mutableStateOf(true)}
     var isGradesLoading by remember { mutableStateOf(false) }
 
-    // Load dữ liệu ban đầu
-    LaunchedEffect(teacherId) {
+    // Dữ liệu mẫu tạm thời
+    LaunchedEffect(Unit) {
         isLoading = true
-        try {
-            Log.d("TEACHER_DASH", "📚 Đang tải dữ liệu cho giáo viên: $teacherId")
-            
-            // Tải lớp học
-            val classList = RepoHolder.repo.getClassesByTeacher(teacherId)
-            classes = classList
-            
-            // Tải thông báo
-            val notiList = RepoHolder.repo.getNotificationsByRole("teacher")
-            notifications = notiList
-            
-            Log.d("TEACHER_DASH", "✅ Đã tải ${classes.size} lớp và ${notifications.size} thông báo")
-        } catch (e: Exception) {
-            Log.e("TEACHER_DASH", "❌ Lỗi tải dữ liệu: ${e.message}")
-        }
+        // 1. Tạo danh sách lớp học mẫu
+        classes = listOf(
+            Class(id = "CL01", name = "Lớp 12A1", subject = "Toán học nâng cao", room = "P.302", studentCount = 45, schedule = "Thứ 2, 4 (Tiết 1-3)"),
+            Class(id = "CL02", name = "Lớp 11B2", subject = "Toán cơ bản", room = "P.105", studentCount = 38, schedule = "Thứ 3, 5 (Tiết 4-6)"),
+            Class(id = "CL03", name = "Lớp 10C3", subject = "Đại số 10", room = "P.404", studentCount = 42, schedule = "Thứ 6 (Tiết 7-9)")
+        )
+
+        // 2. Tạo thông báo mẫu
+        notifications = listOf(
+            Notification(id = "N1", title = "Họp hội đồng sư phạm", content = "Nội dung: Phổ biến kế hoạch thi cuối học kỳ 2 tại hội trường A.", type = "event", createdAt = System.currentTimeMillis()),
+            Notification(id = "N2", title = "Cập nhật điểm thi lớp 12A1", content = "Nhắc nhở: Hạn cuối nhập điểm là ngày 20/05.", type = "exam", createdAt = System.currentTimeMillis() - 86400000),
+            Notification(id = "N3", title = "Thông báo nghỉ lễ 2/9", content = "Toàn trường nghỉ lễ từ ngày 01/09 đến hết 03/09.", type = "info", createdAt = System.currentTimeMillis() - 172800000)
+        )
+
+        // 3. Tạo profile giáo viên mẫu
+        teacherData = Teacher(
+            id = teacherId,
+            name = "Trần Nguyễn Bảo Trâm",
+            email = "tram.tnb@school.edu.vn",
+            position = "Trưởng bộ môn Toán",
+            schoolName = "Trường THPT Chuyên Lê Hồng Phong",
+            gender = "Nữ",
+            qualifications = listOf("Thạc sĩ Toán học - ĐH Sư Phạm", "Chứng chỉ sư phạm quốc tế"),
+            achievements = listOf("Giáo viên dạy giỏi cấp Thành phố 2023", "Chiến sĩ thi đua cơ sở")
+        )
+        
         isLoading = false
     }
 
-    // Load học sinh và điểm khi chọn lớp trong tab Bảng điểm
+    // Load học sinh và điểm mẫu khi chọn lớp
     LaunchedEffect(selectedClassForGrades) {
         if (selectedClassForGrades != null) {
             isGradesLoading = true
-            try {
-                val studentList = RepoHolder.repo.getStudentsByClass(selectedClassForGrades!!.id)
-                studentsInSelectedClass = studentList
-                
-                val gradeList = RepoHolder.repo.getGradesByClass(selectedClassForGrades!!.id)
-                gradesInSelectedClass = gradeList
-            } catch (e: Exception) {
-                Log.e("TEACHER_DASH", "❌ Lỗi tải điểm: ${e.message}")
-            }
+            // Tạo danh sách học sinh và điểm mẫu
+            studentsInSelectedClass = listOf(
+                Student(id = "HS001", name = "Nguyễn Văn An"),
+                Student(id = "HS002", name = "Trần Thị Bình"),
+                Student(id = "HS003", name = "Lê Hoàng Cường"),
+                Student(id = "HS004", name = "Phạm Minh Đức")
+            )
+            
+            gradesInSelectedClass = listOf(
+                Grade(id = "G1", studentId = "HS001", classId = selectedClassForGrades!!.id, average = 8.5),
+                Grade(id = "G2", studentId = "HS002", classId = selectedClassForGrades!!.id, average = 9.2),
+                Grade(id = "G3", studentId = "HS003", classId = selectedClassForGrades!!.id, average = 6.8),
+                Grade(id = "G4", studentId = "HS004", classId = selectedClassForGrades!!.id, average = 4.5)
+            )
             isGradesLoading = false
         }
     }
@@ -155,13 +186,13 @@ fun TeacherDashboardScreen(
 
                     // Menu items
                     Column(modifier = Modifier.padding(16.dp)) {
-                        DrawerMenuItem(Icons.Outlined.Dashboard, "Trang chủ", true) { scope.launch { drawerState.close() } }
-                        DrawerMenuItem(Icons.Outlined.School, "Lớp học") { scope.launch { drawerState.close() } }
-                        DrawerMenuItem(Icons.Outlined.Grade, "Bảng điểm") { scope.launch { drawerState.close() } }
-                        DrawerMenuItem(Icons.Outlined.Person, "Hồ sơ") { scope.launch { drawerState.close() } }
-                        DrawerMenuItem(Icons.Outlined.Chat, "Tin nhắn") { scope.launch { drawerState.close() } }
+                        DrawerMenuItem(Icons.Filled.Home, "Trang chủ", true) { scope.launch { drawerState.close() } }
+                        DrawerMenuItem(Icons.Filled.School, "Lớp học") { scope.launch { drawerState.close() } }
+                        DrawerMenuItem(Icons.Filled.Star, "Bảng điểm") { scope.launch { drawerState.close() } }
+                        DrawerMenuItem(Icons.Filled.Person, "Hồ sơ") { scope.launch { drawerState.close() } }
+                        DrawerMenuItem(Icons.Filled.Info, "Tin nhắn") { scope.launch { drawerState.close() } }
                         Divider(modifier = Modifier.padding(vertical = 8.dp))
-                        DrawerMenuItem(Icons.Outlined.Logout, "Đăng xuất", isDestructive = true) {
+                        DrawerMenuItem(Icons.Filled.ExitToApp, "Đăng xuất", isDestructive = true) {
                             scope.launch { drawerState.close() }
                             navController.navigate("login") {
                                 popUpTo("teacher_dashboard") { inclusive = true }
@@ -191,13 +222,13 @@ fun TeacherDashboardScreen(
                     },
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(Icons.Default.Menu, contentDescription = "Menu", tint = NavyBlue)
+                            Icon(Icons.Filled.Menu, contentDescription = "Menu", tint = NavyBlue)
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = CardWhite),
                     actions = {
                         IconButton(onClick = {}) {
-                            Icon(Icons.Outlined.Notifications, contentDescription = "Notifications", tint = NavyBlue)
+                            Icon(Icons.Filled.Notifications, contentDescription = "Notifications", tint = NavyBlue)
                         }
                         IconButton(onClick = { navController.navigate("profile") }) {
                             Surface(
@@ -228,11 +259,11 @@ fun TeacherDashboardScreen(
                             onClick = { selectedTab = index },
                             icon = {
                                 Icon(
-                                    when (index) {
-                                        0 -> if (selectedTab == 0) Icons.Filled.Home else Icons.Outlined.Home
-                                        1 -> if (selectedTab == 1) Icons.Filled.School else Icons.Outlined.School
-                                        2 -> if (selectedTab == 2) Icons.Filled.Grade else Icons.Outlined.Grade
-                                        else -> if (selectedTab == 3) Icons.Filled.Person else Icons.Outlined.Person
+                                    imageVector = when (index) {
+                                        0 -> Icons.Filled.Home
+                                        1 -> Icons.Filled.School
+                                        2 -> Icons.Filled.Star
+                                        else -> Icons.Filled.Person
                                     },
                                     contentDescription = title,
                                     modifier = Modifier.size(24.dp)
@@ -272,7 +303,7 @@ fun TeacherDashboardScreen(
                         grades = gradesInSelectedClass,
                         isLoading = isGradesLoading
                     )
-                    3 -> ProfileTabContent(padding, teacherName, teacherId, navController)
+                    3 -> ProfileTabContent(padding, teacherName, teacherId, teacherData, navController)
                 }
             }
         }
@@ -391,7 +422,7 @@ fun HomeTabContent(
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     StatCardPremium("Lớp học", classes.size.toString(), Icons.Default.School, NavyBlue, Modifier.weight(1f))
-                    StatCardPremium("Học sinh", classes.sumOf { it.studentCount }.toString(), Icons.Default.Groups, SuccessGreen, Modifier.weight(1f))
+                    StatCardPremium("Học sinh", classes.sumOf { it.studentCount }.toString(), Icons.Default.Person, SuccessGreen, Modifier.weight(1f))
                 }
             }
 
@@ -412,7 +443,7 @@ fun HomeTabContent(
                     EmptyStateCard("Không có thông báo nào mới")
                 }
             } else {
-                items(notifications.take(3)) { notification ->
+                items(items = notifications.take(3)) { notification: Notification ->
                     NotificationItem(notification)
                 }
             }
@@ -425,7 +456,7 @@ fun HomeTabContent(
             if (classes.isEmpty()) {
                 item { EmptyStateCard("Bạn chưa được phân công lớp nào") }
             } else {
-                items(classes.take(2)) { classItem ->
+                items(items = classes.take(2)) { classItem: Class ->
                     ClassCompactItem(classItem)
                 }
             }
@@ -489,7 +520,7 @@ fun NotificationItem(notification: Notification) {
                 Text(notification.title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextDark)
                 Text(notification.content, fontSize = 13.sp, color = TextGray, maxLines = 1)
             }
-            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = TextGray.copy(alpha = 0.5f))
+            Icon(Icons.Default.KeyboardArrowRight, contentDescription = null, tint = TextGray.copy(alpha = 0.5f))
         }
     }
 }
@@ -554,7 +585,7 @@ fun ClassesTabContent(padding: PaddingValues, classes: List<Class>, isLoading: B
                 }
             }
 
-            items(classes) { classItem ->
+            items(items = classes) { classItem: Class ->
                 Card(
                     modifier = Modifier.fillMaxWidth().shadow(8.dp, RoundedCornerShape(24.dp)),
                     shape = RoundedCornerShape(24.dp),
@@ -593,9 +624,9 @@ fun ClassesTabContent(padding: PaddingValues, classes: List<Class>, isLoading: B
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            ClassInfoItem(Icons.Default.People, "${classItem.studentCount} HS", "Học sinh")
-                            ClassInfoItem(Icons.Default.MeetingRoom, classItem.room ?: "P.Học", "Phòng học")
-                            ClassInfoItem(Icons.Default.Schedule, "Tiết 1-3", "Thời gian")
+                            ClassInfoItem(Icons.Default.Person, "${classItem.studentCount} HS", "Học sinh")
+                            ClassInfoItem(Icons.Default.Place, classItem.room ?: "P.Học", "Phòng học")
+                            ClassInfoItem(Icons.Default.Info, "Tiết 1-3", "Thời gian")
                         }
                         
                         Spacer(modifier = Modifier.height(16.dp))
@@ -640,7 +671,7 @@ fun GradesTabContent(
             Text("Quản lý bảng điểm", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = TextDark)
             Spacer(modifier = Modifier.height(12.dp))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(classes) { classItem ->
+                items(items = classes) { classItem: Class ->
                     val isSelected = selectedClass?.id == classItem.id
                     Surface(
                         modifier = Modifier.clickable { onClassSelect(classItem) }.shadow(if (isSelected) 8.dp else 0.dp, RoundedCornerShape(16.dp)),
@@ -691,7 +722,7 @@ fun GradesTabContent(
                     }
                 }
                 
-                items(students) { student ->
+                items(items = students) { student: Student ->
                     val studentGrade = grades.find { it.studentId == student.id }
                     val avg = studentGrade?.average ?: 0.0
                     val scoreColor = when {
@@ -749,7 +780,7 @@ fun GradesTabContent(
 }
 
 @Composable
-fun ProfileTabContent(padding: PaddingValues, teacherName: String, teacherId: String, navController: NavController) {
+fun ProfileTabContent(padding: PaddingValues, teacherName: String, teacherId: String, teacher: Teacher?, navController: NavController) {
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(padding).background(BgGray),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -764,22 +795,37 @@ fun ProfileTabContent(padding: PaddingValues, teacherName: String, teacherId: St
                     shape = CircleShape,
                     color = CardWhite
                 ) {
-                    Box(contentAlignment = Alignment.Center) { Text("👩‍🏫", fontSize = 50.sp) }
+                    Box(contentAlignment = Alignment.Center) { 
+                        Text(if (teacher?.gender == "Nữ") "👩‍🏫" else "👨‍🏫", fontSize = 50.sp) 
+                    }
                 }
             }
             Spacer(modifier = Modifier.height(50.dp))
-            Text(teacherName, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = TextDark)
-            Text("Giảng viên cao cấp", fontSize = 14.sp, color = TextGray)
+            Text(teacher?.name ?: teacherName, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = TextDark)
+            Text(teacher?.position ?: "Giảng viên", fontSize = 14.sp, color = TextGray)
             
             Spacer(modifier = Modifier.height(24.dp))
             
             Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                ProfileInfoCard("Mã nhân viên", teacherId, Icons.Default.Badge)
-                ProfileInfoCard("Email", "teacher@school.edu.vn", Icons.Default.Email)
-                ProfileInfoCard("Khoa", "Công nghệ Thông tin", Icons.Default.Domain)
-                ProfileInfoCard("Kinh nghiệm", "8 năm giảng dạy", Icons.Default.Star)
+                ProfileInfoCard("Mã nhân viên", teacherId, Icons.Default.Info)
+                ProfileInfoCard("Email", teacher?.email ?: "Đang tải...", Icons.Default.Email)
+                ProfileInfoCard("Đơn vị", teacher?.schoolName ?: "Trường ĐH Công nghệ Thông tin", Icons.Default.Work)
                 
-                Spacer(modifier = Modifier.height(24.dp))
+                if (teacher?.qualifications?.isNotEmpty() == true) {
+                    Text("🎓 Bằng cấp", modifier = Modifier.padding(top = 16.dp, bottom = 8.dp), fontWeight = FontWeight.Bold, color = NavyBlue)
+                    teacher.qualifications.forEach { q ->
+                        ProfileDetailItem(q)
+                    }
+                }
+
+                if (teacher?.achievements?.isNotEmpty() == true) {
+                    Text("🏆 Thành tích", modifier = Modifier.padding(top = 16.dp, bottom = 8.dp), fontWeight = FontWeight.Bold, color = NavyBlue)
+                    teacher.achievements.forEach { a ->
+                        ProfileDetailItem(a)
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(32.dp))
                 
                 Button(
                     onClick = { 
@@ -791,11 +837,27 @@ fun ProfileTabContent(padding: PaddingValues, teacherName: String, teacherId: St
                     colors = ButtonDefaults.buttonColors(containerColor = ErrorRed),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Icon(Icons.Default.Logout, contentDescription = null)
+                    Icon(Icons.Filled.ExitToApp, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Đăng xuất", fontWeight = FontWeight.Bold)
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun ProfileDetailItem(text: String) {
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = androidx.compose.foundation.BorderStroke(1.dp, NavyBlue.copy(alpha = 0.05f))
+    ) {
+        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.Info, contentDescription = null, tint = SuccessGreen, modifier = Modifier.size(16.dp))
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(text, fontSize = 14.sp, color = TextDark)
         }
     }
 }

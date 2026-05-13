@@ -15,7 +15,8 @@ class AppRepo {
 
     // ============ TEACHER ============
     suspend fun createTeacher(teacher: Teacher) = firebase.createTeacher(teacher)
-    suspend fun getTeacherById(teacherId: String) = firebase.getTeacherById(teacherId)
+    suspend fun getTeacherById(id: String) = firebase.getTeacherById(id)
+    suspend fun getTeachersBySchool(schoolId: String) = firebase.getTeachersBySchool(schoolId)
     suspend fun getClassesByTeacher(teacherId: String) = firebase.getClassesByTeacher(teacherId)
     suspend fun getAllTeachers() = firebase.getAllTeachers()
 
