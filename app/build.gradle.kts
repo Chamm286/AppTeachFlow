@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.teachflow"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 36  // SỬA: 34 -> 36
         versionCode = 1
         versionName = "1.0"
