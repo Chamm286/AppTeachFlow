@@ -1,4 +1,4 @@
-﻿package com.example.teachflow.presentation.student
+package com.example.teachflow.presentation.student
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import com.example.teachflow.presentation.student.viewmodel.StudentViewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -26,67 +27,87 @@ import com.example.teachflow.presentation.theme.*
 val BgLightGray = Color(0xFFF8FAFC)
 val CardWhite = Color(0xFFFFFFFF)
 
+
 @Composable
 fun StudentDashboardScreen(
     navController: NavController,
     studentId: String,
-    studentName: String
+    studentName: String,
+    viewModel: StudentViewModel
 ) {
+    val state by viewModel.state.collectAsState()
+
     Box(modifier = Modifier.fillMaxSize().background(BgLightGray)) {
+        if (state.isLoading) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        }
+
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 24.dp)
         ) {
-            // 1. Header Section với Gradient nhô lên
+            // 1. Header Section
             item {
-                StudentHeader(studentName)
+                StudentHeader(state.userName.ifEmpty { studentName })
             }
 
-            // 2. Stats Section - Overlapping with Header
+            // 2. Stats Section
             item {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
-                        .offset(y = (-30).dp), // Tạo hiệu ứng nhô lên
+                        .offset(y = (-30).dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     StudentStatCard(
                         modifier = Modifier.weight(1f),
-                        value = "8.5",
+                        value = String.format("%.1f", state.averageScore),
                         label = "GPA",
                         icon = "📈",
                         color = TeachFlowSuccess
                     )
                     StudentStatCard(
                         modifier = Modifier.weight(1f),
-                        value = "12",
+                        value = "${state.classCount}",
                         label = "Môn học",
                         icon = "📚",
                         color = TeachFlowBlue
                     )
                     StudentStatCard(
                         modifier = Modifier.weight(1f),
-                        value = "05",
-                        label = "Huy hiệu",
-                        icon = "🏆",
+                        value = String.format("%02d", state.taskCompleted),
+                        label = "Hoàn thành",
+                        icon = "✅",
                         color = TeachFlowWarning
                     )
                 }
             }
 
-            // 3. Recent Grades Section
+            // 3. Recent Grades Section (Using real data if available, else placeholders for demo)
             item {
                 SectionHeader("📊 Điểm số gần đây", onSeeAllClick = {})
             }
 
-            items(listOf(
-                GradeData("Toán học", 8.5, "15/05", Color(0xFFE0F2FE), Color(0xFF0284C7)),
-                GradeData("Ngữ văn", 7.8, "14/05", Color(0xFFFEF2F2), Color(0xFFDC2626)),
-                GradeData("Vật lý", 9.0, "12/05", Color(0xFFF0FDF4), Color(0xFF16A34A)),
-                GradeData("Hóa học", 8.2, "10/05", Color(0xFFFFF7ED), Color(0xFFEA580C))
-            )) { data ->
-                GradeCardEnhanced(data)
+            if (state.classes.isEmpty()) {
+                items(listOf(
+                    GradeData("Toán học", 8.5, "15/05", Color(0xFFE0F2FE), Color(0xFF0284C7)),
+                    GradeData("Ngữ văn", 7.8, "14/05", Color(0xFFFEF2F2), Color(0xFFDC2626)),
+                    GradeData("Vật lý", 9.0, "12/05", Color(0xFFF0FDF4), Color(0xFF16A34A)),
+                    GradeData("Hóa học", 8.2, "10/05", Color(0xFFFFF7ED), Color(0xFFEA580C))
+                )) { data ->
+                    GradeCardEnhanced(data)
+                }
+            } else {
+                items(state.classes) { classItem ->
+                    GradeCardEnhanced(GradeData(
+                        subject = classItem.name,
+                        score = 8.0, // Placeholder score as Class model doesn't have score
+                        date = "Học kỳ 1",
+                        bgColor = Color(0xFFE0F2FE),
+                        accentColor = Color(0xFF0284C7)
+                    ))
+                }
             }
 
             // 4. Tasks Section
@@ -95,11 +116,23 @@ fun StudentDashboardScreen(
                 SectionHeader("📋 Nhiệm vụ sắp tới", onSeeAllClick = {})
             }
 
-            items(listOf(
-                TaskData("Bài tập Toán - Chương 1", "Hôm nay, 23:59", "BÀI TẬP", Color(0xFFEEF2FF), Color(0xFF4F46E5)),
-                TaskData("Soạn văn - Bài thơ mới", "Ngày mai", "TỰ HỌC", Color(0xFFF5F3FF), Color(0xFF7C3AED))
-            )) { task ->
-                TaskCardEnhanced(task)
+            if (state.tasks.isEmpty()) {
+                items(listOf(
+                    TaskData("Bài tập Toán - Chương 1", "Hôm nay, 23:59", "BÀI TẬP", Color(0xFFEEF2FF), Color(0xFF4F46E5)),
+                    TaskData("Soạn văn - Bài thơ mới", "Ngày mai", "TỰ HỌC", Color(0xFFF5F3FF), Color(0xFF7C3AED))
+                )) { task ->
+                    TaskCardEnhanced(task)
+                }
+            } else {
+                items(state.tasks) { task ->
+                    TaskCardEnhanced(TaskData(
+                        title = task.title,
+                        deadline = "Hạn: ${task.dueDate}",
+                        tag = if (task.isCompleted) "HOÀN THÀNH" else "CHƯA XONG",
+                        bgColor = if (task.isCompleted) Color(0xFFF0FDF4) else Color(0xFFFEF2F2),
+                        accentColor = if (task.isCompleted) Color(0xFF16A34A) else Color(0xFFDC2626)
+                    ))
+                }
             }
         }
     }

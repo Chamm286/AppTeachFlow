@@ -1,4 +1,4 @@
-﻿package com.example.teachflow.presentation.navigation
+package com.example.teachflow.presentation.navigation
 
 import android.util.Log
 import androidx.compose.runtime.Composable
@@ -26,6 +26,7 @@ import com.example.teachflow.presentation.onboarding.OnboardingScreen
 import com.example.teachflow.presentation.student.StudentChatDetailScreen
 import com.example.teachflow.presentation.student.StudentChatListScreen
 import com.example.teachflow.presentation.student.viewmodel.StudentViewModel
+import com.example.teachflow.core.RepoHolder
 
 @Composable
 fun NavigationGraph() {
@@ -103,9 +104,8 @@ fun NavigationGraph() {
             // 2. Nạp Repo và Load dữ liệu ngay khi vào màn hình
             // Sử dụng LaunchedEffect để đảm bảo dữ liệu chỉ tải 1 lần khi vào màn hình
             LaunchedEffect(Unit) {
-                // Nạp Repository của team mình vào (Công Đức thường để trong data.repo)
-                val appRepo = com.example.teachflow.data.repo.AppRepo()
-                studentViewModel.initRepo(appRepo)
+                // Nạp Repository từ RepoHolder
+                studentViewModel.initRepo(RepoHolder.repo)
 
                 // Gọi hàm loadData với ID học sinh để kéo dữ liệu từ Firebase về
                 studentViewModel.loadData("HS01")

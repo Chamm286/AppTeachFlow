@@ -3,15 +3,15 @@ package com.example.teachflow.data.repo
 import com.example.teachflow.data.model.*
 import com.example.teachflow.data.remote.Firebase
 
-class AppRepo {
-
-    private val firebase = Firebase()
+class AppRepo(private val firebase: Firebase) {
 
     // ============ USER ============
     suspend fun createUser(user: User) = firebase.createUser(user)
     suspend fun getUserById(uid: String) = firebase.getUserById(uid)
     suspend fun getUserByEmail(email: String) = firebase.getUserByEmail(email)
     suspend fun getAllUsers() = firebase.getAllUsers()
+    suspend fun updateUser(user: User) = firebase.updateUser(user)
+    suspend fun deleteUser(uid: String) = firebase.deleteUser(uid)
 
     // ============ TEACHER ============
     suspend fun createTeacher(teacher: Teacher) = firebase.createTeacher(teacher)
@@ -41,6 +41,8 @@ class AppRepo {
     suspend fun createCourse(course: Course) = firebase.createCourse(course)
     suspend fun getCourseById(courseId: String) = firebase.getCourseById(courseId)
     suspend fun getAllCourses() = firebase.getAllCourses()
+    suspend fun updateCourse(course: Course) = firebase.updateCourse(course)
+    suspend fun deleteCourse(id: String) = firebase.deleteCourse(id)
 
     // ============ LESSON ============
     suspend fun createLesson(lesson: Lesson) = firebase.createLesson(lesson)
