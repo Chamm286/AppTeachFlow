@@ -36,6 +36,7 @@ import com.example.teachflow.data.model.Student
 import com.example.teachflow.data.model.Grade
 import com.example.teachflow.data.model.Teacher
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 // --- Premium Color Palette ---
 val PrimaryBlue = Color(0xFF1E3A8A)
@@ -98,18 +99,53 @@ fun TeacherDashboardScreen(
     LaunchedEffect(selectedClassForGrades) {
         if (selectedClassForGrades != null) {
             isGradesLoading = true
-            studentsInSelectedClass = listOf(
-                Student(id = "SV01", name = "Lê Hoàng Long"),
-                Student(id = "SV02", name = "Nguyễn Minh Anh"),
-                Student(id = "SV03", name = "Trần Bảo Ngọc"),
-                Student(id = "SV04", name = "Phạm Gia Huy")
-            )
-            gradesInSelectedClass = listOf(
-                Grade(studentId = "SV01", average = 9.2),
-                Grade(studentId = "SV02", average = 8.5),
-                Grade(studentId = "SV03", average = 5.4),
-                Grade(studentId = "SV04", average = 7.8)
-            )
+            // Giả lập trễ mạng một chút cho chuyên nghiệp
+            kotlinx.coroutines.delay(500) 
+            
+            when(selectedClassForGrades!!.id) {
+                "CL01" -> { // 12A1
+                    studentsInSelectedClass = listOf(
+                        Student(id = "SV101", name = "Lê Hoàng Long"),
+                        Student(id = "SV102", name = "Nguyễn Minh Anh"),
+                        Student(id = "SV103", name = "Trần Bảo Ngọc"),
+                        Student(id = "SV104", name = "Phạm Gia Huy"),
+                        Student(id = "SV105", name = "Vũ Hải Đăng")
+                    )
+                    gradesInSelectedClass = listOf(
+                        Grade(studentId = "SV101", average = 9.8),
+                        Grade(studentId = "SV102", average = 9.2),
+                        Grade(studentId = "SV103", average = 8.5),
+                        Grade(studentId = "SV104", average = 7.8),
+                        Grade(studentId = "SV105", average = 9.5)
+                    )
+                }
+                "CL02" -> { // 11B4
+                    studentsInSelectedClass = listOf(
+                        Student(id = "SV201", name = "Hoàng Thị Thùy"),
+                        Student(id = "SV202", name = "Đặng Văn Lâm"),
+                        Student(id = "SV203", name = "Bùi Tiến Dũng"),
+                        Student(id = "SV204", name = "Nguyễn Quang Hải")
+                    )
+                    gradesInSelectedClass = listOf(
+                        Grade(studentId = "SV201", average = 7.5),
+                        Grade(studentId = "SV202", average = 6.8),
+                        Grade(studentId = "SV203", average = 4.2),
+                        Grade(studentId = "SV204", average = 8.0)
+                    )
+                }
+                "CL03" -> { // 10C2
+                    studentsInSelectedClass = listOf(
+                        Student(id = "SV301", name = "Phan Mạnh Quỳnh"),
+                        Student(id = "SV302", name = "Sơn Tùng MTP"),
+                        Student(id = "SV303", name = "Hồ Ngọc Hà")
+                    )
+                    gradesInSelectedClass = listOf(
+                        Grade(studentId = "SV301", average = 5.5),
+                        Grade(studentId = "SV302", average = 10.0),
+                        Grade(studentId = "SV303", average = 8.8)
+                    )
+                }
+            }
             isGradesLoading = false
         }
     }
