@@ -2,7 +2,11 @@
 
 data class Score(
     val id: String = "",
-    val studentId: String = "",
-    val columnId: String = "",
-    val value: Float? = null
+    val name: String,
+    val score: Float,
+    val coefficient: Int,
+    val date: String,
+    val type: String,
+    val isFinalized: Boolean = false
+
 )
