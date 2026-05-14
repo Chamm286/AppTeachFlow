@@ -23,6 +23,8 @@ import com.example.teachflow.presentation.notification.NotificationScreen
 import com.example.teachflow.presentation.qr.QRScanScreen
 import com.example.teachflow.presentation.splash.SplashScreen
 import com.example.teachflow.presentation.onboarding.OnboardingScreen
+import com.example.teachflow.presentation.student.StudentChatDetailScreen
+import com.example.teachflow.presentation.student.StudentChatListScreen
 import com.example.teachflow.presentation.student.viewmodel.StudentViewModel
 
 @Composable
@@ -162,6 +164,17 @@ fun NavigationGraph() {
                     navController.popBackStack()
                 }
             ) 
+        }
+
+        // Màn hình danh sách tin nhắn của học sinh
+        composable("student_chat_list") {
+            StudentChatListScreen(navController = navController)
+        }
+
+        // Màn hình chi tiết tin nhắn
+        composable("student_chat_detail/{chatId}/{teacherName}") { backStackEntry ->
+            val teacherName = backStackEntry.arguments?.getString("teacherName") ?: "Giảng viên"
+            StudentChatDetailScreen(navController = navController, teacherName = teacherName)
         }
     }
 }

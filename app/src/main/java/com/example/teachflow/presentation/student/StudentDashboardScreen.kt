@@ -51,7 +51,20 @@ fun StudentDashboardScreen(
     )
     var isExpanded by remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier.fillMaxSize().background(BgLightGray)) {
+    // DÙNG SCAFFOLD ĐỂ THÊM NÚT NHẮN TIN LƠ LỬNG
+    Scaffold(
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { navController.navigate("student_chat_list") },
+                containerColor = TeachFlowBlue,
+                contentColor = Color.White,
+                shape = CircleShape
+            ) {
+                Icon(Icons.Default.Chat, contentDescription = "Nhắn tin cho giáo viên")
+            }
+        }
+    ) { paddingValues ->
+    Box(modifier = Modifier.fillMaxSize().padding(paddingValues).background(BgLightGray)) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 24.dp)
@@ -144,7 +157,7 @@ fun StudentDashboardScreen(
                 TaskData("Bài tập Toán - Chương 1", "Hôm nay, 23:59", "BÀI TẬP", Color(0xFFEEF2FF), Color(0xFF4F46E5)),
                 TaskData("Soạn văn - Bài thơ mới", "Ngày mai", "TỰ HỌC", Color(0xFFF5F3FF), Color(0xFF7C3AED))
             )) { task ->
-                TaskCardEnhanced(task)
+                TaskCardEnhanced(task)}
             }
         }
     }
