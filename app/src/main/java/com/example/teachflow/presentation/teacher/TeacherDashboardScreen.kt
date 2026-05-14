@@ -112,11 +112,11 @@ fun TeacherDashboardScreen(
                         Student(id = "SV105", name = "Vũ Hải Đăng")
                     )
                     gradesInSelectedClass = listOf(
-                        Grade(studentId = "SV101", average = 9.8),
-                        Grade(studentId = "SV102", average = 9.2),
-                        Grade(studentId = "SV103", average = 8.5),
-                        Grade(studentId = "SV104", average = 7.8),
-                        Grade(studentId = "SV105", average = 9.5)
+                        Grade(studentId = "SV101", score15min = 10.0, score45min = 10.0, scoreMidterm = 9.5, scoreFinal = 9.7, average = 9.8),
+                        Grade(studentId = "SV102", score15min = 9.0, score45min = 9.5, scoreMidterm = 9.0, scoreFinal = 9.3, average = 9.2),
+                        Grade(studentId = "SV103", score15min = 8.0, score45min = 8.5, scoreMidterm = 8.5, scoreFinal = 9.0, average = 8.5),
+                        Grade(studentId = "SV104", score15min = 7.0, score45min = 7.5, scoreMidterm = 8.0, scoreFinal = 8.7, average = 7.8),
+                        Grade(studentId = "SV105", score15min = 10.0, score45min = 9.0, scoreMidterm = 9.5, scoreFinal = 9.5, average = 9.5)
                     )
                 }
                 "CL02" -> { // 11B4
@@ -127,10 +127,10 @@ fun TeacherDashboardScreen(
                         Student(id = "SV204", name = "Nguyễn Quang Hải")
                     )
                     gradesInSelectedClass = listOf(
-                        Grade(studentId = "SV201", average = 7.5),
-                        Grade(studentId = "SV202", average = 6.8),
-                        Grade(studentId = "SV203", average = 4.2),
-                        Grade(studentId = "SV204", average = 8.0)
+                        Grade(studentId = "SV201", score15min = 7.0, score45min = 7.5, scoreMidterm = 8.0, scoreFinal = 7.5, average = 7.5),
+                        Grade(studentId = "SV202", score15min = 6.0, score45min = 7.0, scoreMidterm = 7.5, scoreFinal = 6.7, average = 6.8),
+                        Grade(studentId = "SV203", score15min = 4.0, score45min = 4.0, scoreMidterm = 4.5, scoreFinal = 4.3, average = 4.2),
+                        Grade(studentId = "SV204", score15min = 8.0, score45min = 8.0, scoreMidterm = 8.0, scoreFinal = 8.0, average = 8.0)
                     )
                 }
                 "CL03" -> { // 10C2
@@ -140,9 +140,9 @@ fun TeacherDashboardScreen(
                         Student(id = "SV303", name = "Hồ Ngọc Hà")
                     )
                     gradesInSelectedClass = listOf(
-                        Grade(studentId = "SV301", average = 5.5),
-                        Grade(studentId = "SV302", average = 10.0),
-                        Grade(studentId = "SV303", average = 8.8)
+                        Grade(studentId = "SV301", score15min = 5.0, score45min = 5.5, scoreMidterm = 6.0, scoreFinal = 5.5, average = 5.5),
+                        Grade(studentId = "SV302", score15min = 10.0, score45min = 10.0, scoreMidterm = 10.0, scoreFinal = 10.0, average = 10.0),
+                        Grade(studentId = "SV303", score15min = 8.5, score45min = 9.0, scoreMidterm = 8.5, scoreFinal = 9.2, average = 8.8)
                     )
                 }
             }
@@ -184,7 +184,21 @@ fun TeacherDashboardScreen(
                         when (tab) {
                             0 -> HomeTab(teacherName, classes, notifications)
                             1 -> ClassesTab(classes)
-                            2 -> GradesTab(classes, selectedClassForGrades, { selectedClassForGrades = it }, studentsInSelectedClass, gradesInSelectedClass, isGradesLoading)
+                            2 -> GradesTab(
+                                classes = classes,
+                                selected = selectedClassForGrades,
+                                onSelect = { selectedClassForGrades = it },
+                                students = studentsInSelectedClass,
+                                grades = gradesInSelectedClass,
+                                loading = isGradesLoading,
+                                onUpdateGrade = { updatedGrade ->
+                                    // Cập nhật local state ngay lập tức
+                                    gradesInSelectedClass = gradesInSelectedClass.map {
+                                        if (it.studentId == updatedGrade.studentId) updatedGrade else it
+                                    }
+                                    Log.d("TEACHER_DASH", "✅ Đã cập nhật điểm cho student: ${updatedGrade.studentId}")
+                                }
+                            )
                             3 -> ProfileTab(teacherData, navController)
                         }
                     }
@@ -385,10 +399,23 @@ fun ClassDetailInfo(label: String, value: String, icon: ImageVector) {
 }
 
 @Composable
-fun GradesTab(classes: List<Class>, selected: Class?, onSelect: (Class) -> Unit, students: List<Student>, grades: List<Grade>, loading: Boolean) {
+fun GradesTab(
+    classes: List<Class>,
+    selected: Class?,
+    onSelect: (Class) -> Unit,
+    students: List<Student>,
+    grades: List<Grade>,
+    loading: Boolean,
+    onUpdateGrade: (Grade) -> Unit
+) {
+    var showEditDialog by remember { mutableStateOf(false) }
+    var editingGrade by remember { mutableStateOf<Grade?>(null) }
+    var editingStudentName by remember { mutableStateOf("") }
+
     Column(modifier = Modifier.fillMaxSize().padding(20.dp)) {
-        Text("Bảng điểm & Đánh giá", fontSize = 24.sp, fontWeight = FontWeight.Black)
+        Text("Quản lý Bảng điểm", fontSize = 24.sp, fontWeight = FontWeight.Black)
         Spacer(modifier = Modifier.height(16.dp))
+        
         LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             items(classes) { cls ->
                 val isSelected = selected?.id == cls.id
@@ -412,39 +439,135 @@ fun GradesTab(classes: List<Class>, selected: Class?, onSelect: (Class) -> Unit,
         } else if (loading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = PrimaryBlue) }
         } else {
+            // Header bảng điểm
+            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Học sinh", modifier = Modifier.weight(1.5f), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = SurfaceDark.copy(alpha = 0.5f))
+                Text("CC", modifier = Modifier.weight(0.5f), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = SurfaceDark.copy(alpha = 0.5f))
+                Text("BT", modifier = Modifier.weight(0.5f), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = SurfaceDark.copy(alpha = 0.5f))
+                Text("GK", modifier = Modifier.weight(0.5f), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = SurfaceDark.copy(alpha = 0.5f))
+                Text("CK", modifier = Modifier.weight(0.5f), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = SurfaceDark.copy(alpha = 0.5f))
+                Text("TB", modifier = Modifier.weight(0.6f), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PrimaryBlue)
+            }
+
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(students) { student ->
-                    val score = grades.find { it.studentId == student.id }?.average ?: 0.0
-                    GradeItem(student.name, student.id, score)
+                    val score = grades.find { it.studentId == student.id } ?: Grade(studentId = student.id)
+                    GradeItem(student.name, score) {
+                        editingGrade = score
+                        editingStudentName = student.name
+                        showEditDialog = true
+                    }
                 }
             }
         }
     }
+
+    if (showEditDialog && editingGrade != null) {
+        EditGradeDialog(
+            studentName = editingStudentName,
+            grade = editingGrade!!,
+            onDismiss = { showEditDialog = false },
+            onSave = { updatedGrade ->
+                onUpdateGrade(updatedGrade)
+                showEditDialog = false
+            }
+        )
+    }
 }
 
 @Composable
-fun GradeItem(name: String, id: String, score: Double) {
-    val scoreColor = when {
-        score >= 8.0 -> AccentTeal
-        score >= 5.0 -> PremiumGold
-        else -> Color.Red
-    }
+fun GradeItem(name: String, grade: Grade, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.size(44.dp).clip(CircleShape).background(scoreColor.copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
-                Text(name.take(1), fontWeight = FontWeight.Bold, color = scoreColor)
+        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(modifier = Modifier.weight(1.5f)) {
+                Text(name, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(grade.studentId, fontSize = 10.sp, color = SurfaceDark.copy(alpha = 0.5f))
             }
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(name, fontWeight = FontWeight.Bold)
-                Text(id, fontSize = 11.sp, color = SurfaceDark.copy(alpha = 0.5f))
+            Text(grade.score15min.toString(), modifier = Modifier.weight(0.5f), fontSize = 13.sp)
+            Text(grade.score45min.toString(), modifier = Modifier.weight(0.5f), fontSize = 13.sp)
+            Text(grade.scoreMidterm.toString(), modifier = Modifier.weight(0.5f), fontSize = 13.sp)
+            Text(grade.scoreFinal.toString(), modifier = Modifier.weight(0.5f), fontSize = 13.sp)
+            
+            val avg = grade.average
+            val scoreColor = when {
+                avg >= 8.0 -> AccentTeal
+                avg >= 5.0 -> PremiumGold
+                else -> Color.Red
             }
-            Text(score.toString(), fontSize = 20.sp, fontWeight = FontWeight.Black, color = scoreColor)
+            Text(avg.toString(), modifier = Modifier.weight(0.6f), fontSize = 15.sp, fontWeight = FontWeight.Black, color = scoreColor)
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditGradeDialog(studentName: String, grade: Grade, onDismiss: () -> Unit, onSave: (Grade) -> Unit) {
+    var cc by remember { mutableStateOf(grade.score15min.toString()) }
+    var bt by remember { mutableStateOf(grade.score45min.toString()) }
+    var gk by remember { mutableStateOf(grade.scoreMidterm.toString()) }
+    var ck by remember { mutableStateOf(grade.scoreFinal.toString()) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Cập nhật điểm: $studentName", fontSize = 18.sp, fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                GradeInputField("Chuyên cần (10%)", cc) { cc = it }
+                GradeInputField("Bài tập (20%)", bt) { bt = it }
+                GradeInputField("Giữa kỳ (30%)", gk) { gk = it }
+                GradeInputField("Cuối kỳ (40%)", ck) { ck = it }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val sCC = cc.toDoubleOrNull() ?: 0.0
+                    val sBT = bt.toDoubleOrNull() ?: 0.0
+                    val sGK = gk.toDoubleOrNull() ?: 0.0
+                    val sCK = ck.toDoubleOrNull() ?: 0.0
+                    val avg = (sCC + sBT + sGK + sCK) / 4.0
+                    val formattedAvg = (avg * 10).toInt() / 10.0 // Làm tròn 1 chữ số
+                    
+                    onSave(grade.copy(
+                        score15min = sCC,
+                        score45min = sBT,
+                        scoreMidterm = sGK,
+                        scoreFinal = sCK,
+                        average = formattedAvg
+                    ))
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+            ) { Text("Lưu thay đổi", color = Color.White) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Hủy", color = SurfaceDark.copy(alpha = 0.5f)) }
+        },
+        containerColor = Color.White,
+        shape = RoundedCornerShape(28.dp)
+    )
+}
+
+@Composable
+fun GradeInputField(label: String, value: String, onValueChange: (String) -> Unit) {
+    Column {
+        Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = SurfaceDark.copy(alpha = 0.6f))
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            singleLine = true,
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+                focusedIndicatorColor = PrimaryBlue,
+                unfocusedIndicatorColor = SurfaceDark.copy(alpha = 0.1f)
+            )
+        )
     }
 }
 
