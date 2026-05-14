@@ -1,21 +1,17 @@
-﻿package com.example.teachflow.data.repo
+package com.example.teachflow.data.repo
 
 import com.example.teachflow.data.model.*
 import com.example.teachflow.data.remote.Firebase
 
-/**
- * Repository class that acts as a single source of truth for data.
- * It abstracts the data source (Firebase) from the rest of the app.
- */
-class AppRepo(private val firebase: Firebase) {
+class AppRepo {
+
+    private val firebase = Firebase()
 
     // ============ USER ============
     suspend fun createUser(user: User) = firebase.createUser(user)
     suspend fun getUserById(uid: String) = firebase.getUserById(uid)
     suspend fun getUserByEmail(email: String) = firebase.getUserByEmail(email)
     suspend fun getAllUsers() = firebase.getAllUsers()
-    suspend fun updateUser(user: User) = firebase.updateUser(user)
-    suspend fun deleteUser(uid: String) = firebase.deleteUser(uid)
 
     // ============ TEACHER ============
     suspend fun createTeacher(teacher: Teacher) = firebase.createTeacher(teacher)
@@ -45,8 +41,6 @@ class AppRepo(private val firebase: Firebase) {
     suspend fun createCourse(course: Course) = firebase.createCourse(course)
     suspend fun getCourseById(courseId: String) = firebase.getCourseById(courseId)
     suspend fun getAllCourses() = firebase.getAllCourses()
-    suspend fun updateCourse(course: Course) = firebase.updateCourse(course)
-    suspend fun deleteCourse(id: String) = firebase.deleteCourse(id)
 
     // ============ LESSON ============
     suspend fun createLesson(lesson: Lesson) = firebase.createLesson(lesson)

@@ -1,5 +1,6 @@
-﻿package com.example.teachflow.data.remote
+package com.example.teachflow.data.remote
 
+import android.util.Log
 import com.example.teachflow.data.model.*
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -61,22 +62,52 @@ class Firebase {
 
     suspend fun getTeacherById(teacherId: String): Teacher? {
         return try {
-            val doc = db.collection("teachers").document(teacherId).get().await()
-            doc.toObject(Teacher::class.java)
+            db.collection("teachers")
+                .document(teacherId)
+                .get()
+                .await()
+                .toObject(Teacher::class.java)
         } catch (e: Exception) {
             null
         }
     }
 
-    suspend fun getClassesByTeacher(teacherId: String): List<Class> {
+    suspend fun getTeachersBySchool(schoolId: String): List<Teacher> {
         return try {
-            db.collection("classes")
-                .whereEqualTo("teacherId", teacherId)
+            db.collection("teachers")
+                .whereEqualTo("schoolId", schoolId)
                 .get()
                 .await()
                 .documents
-                .mapNotNull { it.toObject(Class::class.java) }
+                .mapNotNull { it.toObject(Teacher::class.java) }
         } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    suspend fun getClassesByTeacher(teacherId: String): List<Class> {
+        return try {
+            Log.d("FIREBASE_DEBUG", "🔍 Truy vấn lớp học cho teacherId: '$teacherId'")
+            val snapshot = db.collection("classes")
+                .whereEqualTo("teacherId", teacherId)
+                .get()
+                .await()
+            
+            val list = snapshot.documents.mapNotNull { it.toObject(Class::class.java) }
+            Log.d("FIREBASE_DEBUG", "📦 Kết quả từ Firebase: tìm thấy ${list.size} tài liệu")
+            
+            if (list.isEmpty()) {
+                // Thử một lần nữa với getAll rồi filter (chỉ để debug)
+                val allSnapshot = db.collection("classes").get().await()
+                Log.d("FIREBASE_DEBUG", "⚠️ Tổng số lớp trong bảng 'classes': ${allSnapshot.size()}")
+                allSnapshot.documents.forEach { doc ->
+                    Log.d("FIREBASE_DEBUG", "   - Tài liệu ${doc.id} có teacherId: '${doc.get("teacherId")}'")
+                }
+            }
+            
+            list
+        } catch (e: Exception) {
+            Log.e("FIREBASE_DEBUG", "❌ Lỗi truy vấn classes: ${e.message}")
             emptyList()
         }
     }
@@ -283,6 +314,19 @@ class Firebase {
         }
     }
 
+    suspend fun getGradesByClass(classId: String): List<Grade> {
+        return try {
+            db.collection("grades")
+                .whereEqualTo("classId", classId)
+                .get()
+                .await()
+                .documents
+                .mapNotNull { it.toObject(Grade::class.java) }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
     suspend fun getRecentGradesByStudent(studentId: String, limit: Int = 5): List<Grade> {
         return try {
             db.collection("grades")
@@ -342,7 +386,31 @@ class Firebase {
     suspend fun getNotificationsByUser(userId: String): List<Notification> {
         return try {
             db.collection("notifications")
-                .whereEqualTo("userId", userId)
+                .whereEqualTo("targetUserId", userId) // Sửa lại field cho đúng logic thường gặp
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .get()
+                .await()
+                .documents
+                .mapNotNull { it.toObject(Notification::class.java) }
+        } catch (e: Exception) {
+            // Nếu không có field targetUserId thì thử senderId hoặc search theo role
+            try {
+                db.collection("notifications")
+                    .whereArrayContains("targetRoles", "teacher")
+                    .get()
+                    .await()
+                    .documents
+                    .mapNotNull { it.toObject(Notification::class.java) }
+            } catch (e2: Exception) {
+                emptyList()
+            }
+        }
+    }
+
+    suspend fun getNotificationsByRole(role: String): List<Notification> {
+        return try {
+            db.collection("notifications")
+                .whereArrayContains("targetRoles", role)
                 .orderBy("createdAt", Query.Direction.DESCENDING)
                 .get()
                 .await()

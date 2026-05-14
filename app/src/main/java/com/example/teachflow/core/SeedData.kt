@@ -1,4 +1,4 @@
-﻿// core/SeedData.kt - Sửa tất cả avatarResId thành avatarUrl
+// core/SeedData.kt - Sửa tất cả avatarResId thành avatarUrl
 package com.example.teachflow.core
 
 import com.example.teachflow.data.model.*
@@ -538,6 +538,45 @@ object SeedData {
                 firebase.createAttendance(a)
                 total++
                 println("   ✅ ${a.id} | ${a.studentName} | ${a.date} | ${a.status}")
+            }
+
+            // ============ 9. TẠO THÔNG BÁO ============
+            println("\n📥 [9/9] Đang tạo Notifications...")
+
+            val notifications = listOf(
+                Notification(
+                    id = "NOTI_001",
+                    title = "Họp hội đồng sư phạm",
+                    content = "Tất cả giáo viên tập trung tại hội trường lúc 8h sáng thứ 2 tuần tới.",
+                    type = "announcement",
+                    targetRoles = listOf("teacher", "admin"),
+                    senderName = "BGH Nhà trường",
+                    createdAt = System.currentTimeMillis() - 86400000 // 1 ngày trước
+                ),
+                Notification(
+                    id = "NOTI_002",
+                    title = "Nhắc nhở nhập điểm HK1",
+                    content = "Hạn cuối nhập điểm học kỳ 1 là ngày 20/05. Đề nghị các thầy cô hoàn tất đúng hạn.",
+                    type = "announcement",
+                    targetRoles = listOf("teacher"),
+                    senderName = "Phòng Đào tạo",
+                    createdAt = System.currentTimeMillis() - 43200000 // 12h trước
+                ),
+                Notification(
+                    id = "NOTI_003",
+                    title = "Lịch thi giữa kỳ dự kiến",
+                    content = "Lịch thi giữa kỳ sẽ bắt đầu từ ngày 25/05. Học sinh và giáo viên lưu ý xem lịch chi tiết.",
+                    type = "exam",
+                    targetRoles = listOf("teacher", "student"),
+                    senderName = "Phòng Khảo thí",
+                    createdAt = System.currentTimeMillis() - 172800000 // 2 ngày trước
+                )
+            )
+
+            for (n in notifications) {
+                firebase.createNotification(n)
+                total++
+                println("   ✅ ${n.id} | ${n.title}")
             }
 
             println()
