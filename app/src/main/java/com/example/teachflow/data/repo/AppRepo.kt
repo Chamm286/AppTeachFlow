@@ -86,4 +86,5 @@ class AppRepo {
     suspend fun updateTask(taskId: String, isCompleted: Boolean) = firebase.updateTask(taskId, isCompleted)
     suspend fun createTask(task: Task): String = firebase.createTask(task)
     suspend fun getTaskById(taskId: String): Task? = firebase.getTaskById(taskId)
+
 }
