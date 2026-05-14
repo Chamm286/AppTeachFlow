@@ -75,23 +75,23 @@ fun TeacherDashboardScreen(
     LaunchedEffect(Unit) {
         isLoading = true
         classes = listOf(
-            Class(id = "CL01", name = "Lớp 12A1", subject = "Toán học nâng cao", room = "Phòng A.102", studentCount = 42, schedule = "Thứ 2 (7:30 - 11:30)"),
-            Class(id = "CL02", name = "Lớp 11B4", subject = "Đại số & Giải tích", room = "Phòng B.305", studentCount = 35, schedule = "Thứ 4 (13:30 - 16:30)"),
-            Class(id = "CL03", name = "Lớp 10C2", subject = "Hình học không gian", room = "Phòng C.201", studentCount = 40, schedule = "Thứ 6 (8:00 - 10:00)")
+            Class(id = "CL01", name = "Lớp 23SE1", subject = "Lập trình Android", room = "Phòng A.102", studentCount = 42, schedule = "Thứ 2 (7:30 - 11:30)"),
+            Class(id = "CL02", name = "Lớp 22NS1", subject = "Cấu trúc dữ liệu", room = "Phòng B.305", studentCount = 35, schedule = "Thứ 4 (13:30 - 16:30)"),
+            Class(id = "CL03", name = "Lớp 21DM1", subject = "Cơ sở dữ liệu", room = "Phòng C.201", studentCount = 40, schedule = "Thứ 6 (8:00 - 10:00)")
         )
         notifications = listOf(
             Notification(id = "1", title = "Họp chi bộ", content = "Nội dung chuẩn bị cho kỳ thi quốc gia.", type = "event"),
-            Notification(id = "2", title = "Cập nhật điểm", content = "Vui lòng hoàn thành nhập điểm lớp 12A1.", type = "exam"),
+            Notification(id = "2", title = "Cập nhật điểm", content = "Vui lòng hoàn thành nhập điểm lớp 23SE1.", type = "exam"),
             Notification(id = "3", title = "Nghỉ lễ", content = "Thông báo nghỉ lễ Giỗ tổ Hùng Vương.", type = "info")
         )
         teacherData = Teacher(
             id = teacherId,
             name = teacherName,
-            position = "Trưởng bộ môn Toán",
-            schoolName = "THPT Chuyên Lê Hồng Phong",
-            email = "tram.tnb@school.edu.vn",
-            qualifications = listOf("Thạc sĩ Sư phạm Toán - ĐH Khoa học Tự nhiên", "Chứng chỉ TESOL quốc tế"),
-            achievements = listOf("Chiến sĩ thi đua cấp Thành phố 2023", "Bằng khen của Bộ Giáo dục")
+            position = "Giảng viên khoa CNTT",
+            schoolName = "Trường Đại học CNTT và TT Việt - Hàn",
+            email = "tram.tnb@vku.udn.vn",
+            qualifications = listOf("Tiến sĩ Khoa học máy tính", "Thạc sĩ Công nghệ phần mềm"),
+            achievements = listOf("Giảng viên tiêu biểu năm 2023", "Bằng khen của Giám đốc Đại học Đà Nẵng")
         )
         isLoading = false
     }
@@ -103,7 +103,7 @@ fun TeacherDashboardScreen(
             kotlinx.coroutines.delay(500) 
             
             when(selectedClassForGrades!!.id) {
-                "CL01" -> { // 12A1
+                "CL01" -> { // 23SE1
                     studentsInSelectedClass = listOf(
                         Student(id = "SV101", name = "Lê Hoàng Long"),
                         Student(id = "SV102", name = "Nguyễn Minh Anh"),
@@ -119,7 +119,7 @@ fun TeacherDashboardScreen(
                         Grade(studentId = "SV105", score15min = 10.0, score45min = 9.0, scoreMidterm = 9.5, scoreFinal = 9.5, average = 9.5)
                     )
                 }
-                "CL02" -> { // 11B4
+                "CL02" -> { // 22NS1
                     studentsInSelectedClass = listOf(
                         Student(id = "SV201", name = "Hoàng Thị Thùy"),
                         Student(id = "SV202", name = "Đặng Văn Lâm"),
@@ -133,7 +133,7 @@ fun TeacherDashboardScreen(
                         Grade(studentId = "SV204", score15min = 8.0, score45min = 8.0, scoreMidterm = 8.0, scoreFinal = 8.0, average = 8.0)
                     )
                 }
-                "CL03" -> { // 10C2
+                "CL03" -> { // 21DM1
                     studentsInSelectedClass = listOf(
                         Student(id = "SV301", name = "Phan Mạnh Quỳnh"),
                         Student(id = "SV302", name = "Sơn Tùng MTP"),
@@ -257,6 +257,9 @@ fun PremiumTopAppBar(name: String, onMenuClick: () -> Unit) {
 
 @Composable
 fun HomeTab(name: String, classes: List<Class>, notifications: List<Notification>) {
+    var selectedClassForDetail by remember { mutableStateOf<Class?>(null) }
+    var showDetailDialog by remember { mutableStateOf(false) }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(20.dp),
@@ -288,7 +291,19 @@ fun HomeTab(name: String, classes: List<Class>, notifications: List<Notification
             SectionHeader("Lịch dạy gần đây", "Lịch biểu")
         }
 
-        items(classes.take(2)) { PremiumClassItem(it) }
+        items(classes.take(2)) { cls ->
+            PremiumClassItem(cls) {
+                selectedClassForDetail = cls
+                showDetailDialog = true
+            }
+        }
+    }
+
+    if (showDetailDialog && selectedClassForDetail != null) {
+        ClassDetailDialog(
+            classItem = selectedClassForDetail!!,
+            onDismiss = { showDetailDialog = false }
+        )
     }
 }
 
@@ -333,9 +348,9 @@ fun PremiumNotificationCard(noti: Notification) {
 }
 
 @Composable
-fun PremiumClassItem(cls: Class) {
+fun PremiumClassItem(cls: Class, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { onClick() },
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
@@ -651,6 +666,66 @@ fun PremiumDetailRow(emoji: String, text: String) {
         Text(emoji, fontSize = 20.sp)
         Spacer(modifier = Modifier.width(12.dp))
         Text(text, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+    }
+}
+
+@Composable
+fun ClassDetailDialog(classItem: Class, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Column {
+                Text(classItem.name, fontSize = 22.sp, fontWeight = FontWeight.Black, color = PrimaryBlue)
+                Text(classItem.subject, fontSize = 14.sp, color = SecondaryBlue, fontWeight = FontWeight.Bold)
+            }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = PrimaryBlue.copy(alpha = 0.1f))
+                
+                DetailInfoItem("📍 Phòng học", classItem.room)
+                DetailInfoItem("⏰ Thời gian", classItem.schedule)
+                DetailInfoItem("👥 Sĩ số", "${classItem.studentCount} sinh viên")
+                DetailInfoItem("📅 Học kỳ", "Học kỳ 1 - 2024")
+                DetailInfoItem("🎓 Tín chỉ", "${if(classItem.credits > 0) classItem.credits else 3} tín chỉ")
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    color = AccentTeal.copy(alpha = 0.1f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Info, null, tint = AccentTeal, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Lớp học đang diễn ra bình thường", fontSize = 12.sp, color = AccentTeal, fontWeight = FontWeight.Medium)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("Đóng", color = Color.White)
+            }
+        },
+        containerColor = Color.White,
+        shape = RoundedCornerShape(28.dp)
+    )
+}
+
+@Composable
+fun DetailInfoItem(label: String, value: String) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(label, fontSize = 14.sp, color = SurfaceDark.copy(alpha = 0.6f))
+        Text(value, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = SurfaceDark)
     }
 }
 
